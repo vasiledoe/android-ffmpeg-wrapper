@@ -10,6 +10,9 @@ android {
         minSdk 26
         targetSdk 32
 
+        versionCode 1000
+        versionName "1.0.0-alpha"
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
     }
