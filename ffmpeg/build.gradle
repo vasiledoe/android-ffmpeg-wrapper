@@ -10,8 +10,8 @@ android {
         minSdk 26
         targetSdk 32
 
-        versionCode 1000
-        versionName "1.0.0-alpha"
+        versionCode 1001
+        versionName "1.0.1-alpha"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -40,7 +40,7 @@ dependencies {
 
     // File
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
-    implementation 'com.arthenica:ffmpeg-kit-min:4.5.1-1'
+    api 'com.arthenica:ffmpeg-kit-min:4.5.1-1'
 
     // DI
     implementation "io.insert-koin:koin-android:3.1.2"
