@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.floodin.ffmpeg_wrapper.feature.CompressVideoUseCase
 import com.floodin.ffmpeg_wrapper.feature.ConcatVideosUseCase
 import com.floodin.ffmpeg_wrapper.util.MyLogs
 import com.floodin.videoeditor.BuildConfig
@@ -19,6 +20,7 @@ import org.koin.core.component.KoinComponent
 open class MainViewModel(
     private val uRIPathHelper: URIPathHelper,
     private val concatVideosUseCase: ConcatVideosUseCase,
+    private val compressVideoUseCase: CompressVideoUseCase,
     private val resUtil: ResUtil
 ) : ViewModel(), KoinComponent {
 
@@ -101,7 +103,7 @@ open class MainViewModel(
                         "onSuccessCallback newFileUri:$newFileUri newFilePath: $newFilePath"
                     )
                     val newVideo = VideoItem(newFileUri, newFilePath)
-                    val updatedList = mutableListOf<VideoItem>(newVideo)
+                    val updatedList = mutableListOf(newVideo)
                     selectedVideoItems.value?.let {
                         updatedList.addAll(it)
                     }
@@ -115,6 +117,47 @@ open class MainViewModel(
                 },
                 onErrorCallback = {
                     MyLogs.LOG("EditEventViewModel", "concatVideos", "onErrorCallback")
+                }
+            )
+        }
+    }
+
+    fun compressVideo() {
+        viewModelScope.launch {
+            val paths = selectedVideoItems.value?.map { it.path }
+            MyLogs.LOG("MainViewModel", "compressVideo", "paths:${paths?.size}")
+
+            if (paths.isNullOrEmpty() || paths.size > 1) {
+                publishError("Need at least one video for encoding")
+                return@launch
+            }
+
+            publishLoadingStateOn()
+            compressVideoUseCase.compressVideo(
+                inputPath = paths.first(),
+                appId = BuildConfig.APPLICATION_ID,
+                appName = resUtil.getStringRes(R.string.app_name),
+                onSuccessCallback = { newFileUri, newFilePath ->
+                    MyLogs.LOG(
+                        "MainViewModel",
+                        "compressVideo",
+                        "onSuccessCallback newFileUri:$newFileUri newFilePath: $newFilePath"
+                    )
+                    val newVideo = VideoItem(newFileUri, newFilePath)
+                    val updatedList = mutableListOf(newVideo)
+                    selectedVideoItems.value?.let {
+                        updatedList.addAll(it)
+                    }
+                    viewModelScope.launch(Dispatchers.Main) {
+                        publishSuccess("Concat is done successfully!")
+                        selectedVideoItems.value = updatedList
+                    }
+                },
+                onProgressCallback = {
+                    MyLogs.LOG("EditEventViewModel", "compressVideo", "onProgressCallback")
+                },
+                onErrorCallback = {
+                    MyLogs.LOG("EditEventViewModel", "compressVideo", "onErrorCallback")
                 }
             )
         }

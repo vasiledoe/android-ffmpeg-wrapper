@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -19,7 +18,7 @@ import com.floodin.videoeditor.databinding.ActivityMainBinding
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseMediaActivity() {
 
     private lateinit var mBinding: ActivityMainBinding
     private lateinit var mVideosAdapter: VideosAdapter
@@ -47,7 +46,7 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_compress -> {
-                // TODO:
+                mViewModel.compressVideo()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -56,8 +55,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun setUpViews() {
         mBinding.btnSelectVideos.setOnClickListener {
-            selectVideos()
+            if (hasStoragePermission()) {
+                selectVideos()
+            } else {
+                requestStoragePermission()
+            }
         }
+    }
+
+    override fun onStoragePermissionGranted() {
+        selectVideos()
     }
 
     private fun onBindModel() {
