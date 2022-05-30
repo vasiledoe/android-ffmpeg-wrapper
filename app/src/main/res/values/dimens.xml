@@ -1,0 +1,36 @@
+<resources>
+    <dimen name="custom_dim_0">0dp</dimen>
+    <dimen name="custom_dim_1">1dp</dimen>
+    <dimen name="custom_dim_2">2dp</dimen>
+    <dimen name="custom_dim_4">4dp</dimen>
+    <dimen name="custom_dim_6">6dp</dimen>
+    <dimen name="custom_dim_8">8dp</dimen>
+    <dimen name="custom_dim_10">10dp</dimen>
+    <dimen name="custom_dim_12">12dp</dimen>
+    <dimen name="custom_dim_16">16dp</dimen>
+    <dimen name="custom_dim_18">18dp</dimen>
+    <dimen name="custom_dim_20">20dp</dimen>
+    <dimen name="custom_dim_24">24dp</dimen>
+    <dimen name="custom_dim_26">26dp</dimen>
+    <dimen name="custom_dim_28">28dp</dimen>
+    <dimen name="custom_dim_32">32dp</dimen>
+    <dimen name="custom_dim_38">38dp</dimen>
+    <dimen name="custom_dim_40">40dp</dimen>
+    <dimen name="custom_dim_48">48dp</dimen>
+    <dimen name="custom_dim_56">56dp</dimen>
+    <dimen name="custom_dim_64">64dp</dimen>
+    <dimen name="custom_dim_80">80dp</dimen>
+
+    <!--static sizes for text-->
+    <dimen name="txt_xxs_small">10sp</dimen>
+    <dimen name="txt_xs_small">12sp</dimen>
+    <dimen name="txt_small">14sp</dimen>
+    <dimen name="txt_xs_medium">16sp</dimen>
+    <dimen name="txt_medium">18sp</dimen>
+    <dimen name="txt_xl_medium">20sp</dimen>
+    <dimen name="txt_large">22sp</dimen>
+    <dimen name="txt_xl_large">28sp</dimen>
+    <dimen name="txt_xxl_large">32sp</dimen>
+    <dimen name="txt_xxxl_large">48sp</dimen>
+
+</resources>
