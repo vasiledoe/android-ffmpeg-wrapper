@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
+import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import java.io.File
 
 
@@ -66,8 +67,8 @@ class FfmpegCommandUtil(
     fun executeSync(
         command: String,
         outputFile: File,
-        appId: String
-    ) {
+        appId: String,
+    ): FFmpegResult {
         val session = FFmpegKit.execute(command)
         if (ReturnCode.isSuccess(session.returnCode)) {
             MyLogs.LOG(
@@ -75,58 +76,29 @@ class FfmpegCommandUtil(
                 "executeSync",
                 "SUCCESS session: ${session.state}"
             )
+            val uri = FileProvider.getUriForFile(
+                context,
+                "$appId.fileprovider",
+                outputFile
+            )
+            return FFmpegResult.Successful(
+                outputPath = outputFile.absolutePath,
+                outputUri = uri
+            )
         } else if (ReturnCode.isCancel(session.returnCode)) {
             MyLogs.LOG(
                 "FfmpegCommandUtil",
                 "executeSync",
                 "CANCEL session: ${session.state}"
             )
+            return FFmpegResult.Cancel
         } else {
             MyLogs.LOG(
                 "FfmpegCommandUtil",
                 "executeSync",
                 "FAILURE session: ${session.state}"
             )
+            return FFmpegResult.Error
         }
     }
-
-
-//    protected void execSync(String ffmpegCommand) {
-//        FFmpegSession session = FFmpegKit.execute(ffmpegCommand);
-//        if (ReturnCode.isSuccess(session.getReturnCode())) {
-//            Log.d(TAG, "execSync - SUCCESS");
-//            // SUCCESS
-//
-//        } else if (ReturnCode.isCancel(session.getReturnCode())) {
-//            Log.d(TAG, "CANCEL");
-//            // CANCEL
-//
-//        } else {
-//            Log.d(TAG, String.format("execSync - Command failed with state %s and rc %s.%s", session.getState(), session.getReturnCode(), session.getFailStackTrace()));
-//            // FAILURE
-//
-//        }
-//    }
-//
-//    protected void execAsync(String ffmpegCommand) {
-//        FFmpegKit.executeAsync(
-//                ffmpegCommand,
-//                session -> {
-//                    SessionState state = session.getState();
-//                    ReturnCode returnCode = session.getReturnCode();
-//                    Log.d(TAG, String.format("FFmpeg process exited with state %s and rc %s.%s", state, returnCode, session.getFailStackTrace()));
-//                    // CALLED WHEN SESSION IS EXECUTED
-//
-//                },
-//                log -> {
-//                    Log.d(TAG, "logs:" + log);
-//                    // CALLED WHEN SESSION PRINTS LOGS
-//
-//                }, statistics -> {
-//                    // CALLED WHEN SESSION GENERATES STATISTICS
-//                    Log.d(TAG, "statistics:" + statistics);
-//
-//                });
-//    }
-
 }
