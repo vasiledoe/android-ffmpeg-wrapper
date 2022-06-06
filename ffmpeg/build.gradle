@@ -40,7 +40,7 @@ dependencies {
 
     // File
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
-    api 'com.arthenica:ffmpeg-kit-min:4.5.1-1'
+    api 'com.arthenica:ffmpeg-kit-min-gpl:4.5.1-1'
 
     // DI
     implementation "io.insert-koin:koin-android:3.1.2"

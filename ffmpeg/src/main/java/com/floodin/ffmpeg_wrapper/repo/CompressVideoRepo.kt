@@ -57,11 +57,11 @@ class CompressVideoRepo(
         //ffmpeg -i input.mp4 -c:a copy -c:v vp9 -b:v 1M output.mp4
         //ffmpeg -i input.mp4 -c:a copy -s hd720 output.mp4
         //ffmpeg -y -i /source-path/input.mp4 -s 480x320 -r 25 -vcodec mpeg4 -b:v 300k -b:a 48000 -ac 2 -ar 22050 /source/output.mp4
-
+        val widthHeight = format.value.split("x")
         return if (duration != null) {
-            "-y -i $inputPath -s ${format.value} -r 30 -vcodec mpeg4 -b:v 300k -b:a 48000 -ac 2 -ar 22050 -ss 0 -t $duration $outputPath"
+            "-y -i $inputPath  -vf \"scale=w='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),${widthHeight[0]},-2)':h='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),-2,${widthHeight[1]})',setsar=1,setdar=a,pad=w=${widthHeight[0]}:h=${widthHeight[1]}:x=-1:y=-1\" -crf 22 -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast -t $duration $outputPath"
         } else {
-            "-y -i $inputPath -s ${format.value} -r 30 -vcodec mpeg4 -b:v 300k -b:a 48000 -ac 2 -ar 22050 $outputPath"
+            "-y -i $inputPath  -vf \"scale=w='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),${widthHeight[0]},-2)':h='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),-2,${widthHeight[1]})',setsar=1,setdar=a,pad=w=${widthHeight[0]}:h=${widthHeight[1]}:x=-1:y=-1\" -crf 22 -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast $outputPath"
         }
     }
 
