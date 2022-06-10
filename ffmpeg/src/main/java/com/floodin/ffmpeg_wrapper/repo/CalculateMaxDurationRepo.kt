@@ -49,7 +49,7 @@ class CalculateMaxDurationRepo {
         }.values.sum()
         val remainingDuration = maxOutputDuration - shorterVideoTotalDuration
         val newMaxDuration = remainingDuration / longerVideoCount
-        return if (longerVideoCount == 0) {
+        return if (longerVideoCount <= 1 || shorterVideoTotalDuration == 0f) {
             MyLogs.LOG(
                 "CalculateMaxDurationRepo",
                 "maxVideoDuration",

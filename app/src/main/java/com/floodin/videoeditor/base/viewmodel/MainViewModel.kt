@@ -101,6 +101,7 @@ open class MainViewModel(
             concatVideos.execute(
                 inputPaths = paths,
                 format = VideoFormat.HD,
+                duration = 15f,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name),
                 onSuccessCallback = { newFileUri, newFilePath ->
