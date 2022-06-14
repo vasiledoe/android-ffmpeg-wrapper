@@ -55,4 +55,39 @@ class CompressVideoUseCase(
             onErrorCallback("Unexpected error")
         }
     }
+
+    /**
+     * Apply compress to multiple videos
+     *
+     * @param inputPaths - file absolute paths
+     * @param format - desired video resolution
+     * @param duration - desired file duration to take in consideration for final compressed video
+     * @param appId - application ID
+     * @param appName - application Name
+     * @return list of result <media uri, absolute path>
+     */
+    fun executeMultipleCompressSync(
+        inputPaths: List<String>,
+        format: VideoFormat,
+        duration: Float = DEF_MAX_VIDEO_DURATION.toFloat(),
+        appId: String,
+        appName: String
+    ): List<Pair<Uri, String>>? {
+        val pathsWithMaxDuration = calculateMaxDurationRepo.execute(inputPaths, duration)
+        val compressedVideos = pathsWithMaxDuration.mapNotNull {
+            val videoCompressedResult = compressVideoRepo.execute(
+                inputPath = it.key,
+                format = format,
+                duration = it.value,
+                appId = appId,
+                appName = appName
+            )
+            if (videoCompressedResult is FFmpegResult.Successful) {
+                Pair(videoCompressedResult.outputUri, videoCompressedResult.outputPath)
+            } else {
+                null
+            }
+        }
+        return compressedVideos
+    }
 }

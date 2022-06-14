@@ -175,4 +175,34 @@ open class MainViewModel(
             )
         }
     }
+
+    fun compressMultipleVideos() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val paths = selectedVideoItems.value?.map { it.path }
+            MyLogs.LOG("MainViewModel", "compressMultipleVideos", "paths:${paths?.size}")
+
+            if (paths.isNullOrEmpty() || paths.size < 2) {
+                viewModelScope.launch(Dispatchers.Main) {
+                    publishError("Need at least 2 videos for multiple compress")
+                }
+                return@launch
+            }
+
+            viewModelScope.launch(Dispatchers.Main) {
+                publishLoadingStateOn()
+            }
+
+            val result = compressVideo.executeMultipleCompressSync(
+                inputPaths = paths,
+                format = VideoFormat.HD,
+                appId = BuildConfig.APPLICATION_ID,
+                appName = resUtil.getStringRes(R.string.app_name)
+            )
+
+            viewModelScope.launch(Dispatchers.Main) {
+                publishLoadingStateOff()
+            }
+            MyLogs.LOG("EditEventViewModel", "compressMultipleVideos", "result:$result")
+        }
+    }
 }
