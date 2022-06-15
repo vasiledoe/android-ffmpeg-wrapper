@@ -25,7 +25,7 @@ class CompressVideoUseCase(
      * @param onProgressCallback - todo
      * @param onErrorCallback - callback to return error
      */
-    fun execute(
+    fun executeAsync(
         inputVideo: VideoInput,
         format: VideoFormat,
         duration: Float = DEF_MAX_VIDEO_DURATION.toFloat(),

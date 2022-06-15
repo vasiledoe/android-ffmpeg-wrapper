@@ -104,7 +104,7 @@ open class MainViewModel(
                 publishLoadingStateOn()
             }
 
-            concatVideos.execute(
+            concatVideos.executeAsync(
                 inputVideos = inputVideos,
                 format = VideoFormat.HD,
                 duration = 15f,
@@ -136,6 +136,59 @@ open class MainViewModel(
         }
     }
 
+    fun concatVideosSync() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val inputVideos = selectedVideoItems.value?.mapIndexed { index, videoItem ->
+                VideoInput(
+                    "videoId:$index",
+                    videoItem.path
+                )
+            }
+            MyLogs.LOG("MainViewModel", "concatVideosSync", "inputVideos:${inputVideos?.size}")
+
+            if (inputVideos.isNullOrEmpty() || inputVideos.size < 2) {
+                viewModelScope.launch(Dispatchers.Main) {
+                    publishError("Need at least 2 videos for concat")
+                }
+                return@launch
+            }
+
+            viewModelScope.launch(Dispatchers.Main) {
+                publishLoadingStateOn()
+            }
+
+            val videoOutput = concatVideos.executeSync(
+                inputVideos = inputVideos,
+                format = VideoFormat.HD,
+                duration = 15f,
+                appId = BuildConfig.APPLICATION_ID,
+                appName = resUtil.getStringRes(R.string.app_name)
+            )
+
+            MyLogs.LOG(
+                "MainViewModel",
+                "concatVideosSync",
+                "onSuccessCallback videoOutput:$videoOutput"
+            )
+
+            videoOutput?.let { resultVideoMeta ->
+                val newVideo = VideoItem(resultVideoMeta.uri, resultVideoMeta.absolutePath)
+                val updatedList = mutableListOf(newVideo)
+                selectedVideoItems.value?.let {
+                    updatedList.addAll(it)
+                }
+                viewModelScope.launch(Dispatchers.Main) {
+                    publishSuccess("Concat is done successfully!")
+                    selectedVideoItems.value = updatedList
+                }
+            } ?: run {
+                viewModelScope.launch(Dispatchers.Main) {
+                    publishError("Failed to concat videos!")
+                }
+            }
+        }
+    }
+
     fun compressVideo() {
         viewModelScope.launch(Dispatchers.IO) {
             val inputVideos = selectedVideoItems.value?.mapIndexed { index, videoItem ->
@@ -156,7 +209,7 @@ open class MainViewModel(
             viewModelScope.launch(Dispatchers.Main) {
                 publishLoadingStateOn()
             }
-            compressVideo.execute(
+            compressVideo.executeAsync(
                 inputVideo = inputVideos.first(),
                 format = VideoFormat.HD,
                 appId = BuildConfig.APPLICATION_ID,

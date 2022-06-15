@@ -41,8 +41,12 @@ class MainActivity : BaseMediaActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.action_concat -> {
+            R.id.action_concat_async -> {
                 mViewModel.concatVideos()
+                true
+            }
+            R.id.action_concat_sync -> {
+                mViewModel.concatVideosSync()
                 true
             }
             R.id.action_compress -> {

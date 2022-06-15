@@ -26,7 +26,7 @@ class ConcatVideosUseCase(
      * @param onProgressCallback - todo
      * @param onErrorCallback - callback to return error
      */
-    fun execute(
+    fun executeAsync(
         inputVideos: List<VideoInput>,
         format: VideoFormat,
         duration: Float = DEF_MAX_VIDEO_DURATION.toFloat(),
@@ -68,6 +68,52 @@ class ConcatVideosUseCase(
         } else {
             onErrorCallback("Unexpected error")
         }
+    }
+
+    /**
+     * Apply an algorithm of actions to cut, compress and concat a video set
+     *
+     * @param inputVideos - input video file metas
+     * @param format - desired video resolution
+     * @param duration - desired file duration to take in consideration for final compressed video
+     * @param appId - application ID
+     * @param appName - application Name
+     * @return result compressed concat video
+     */
+    fun executeSync(
+        inputVideos: List<VideoInput>,
+        format: VideoFormat,
+        duration: Float = DEF_MAX_VIDEO_DURATION.toFloat(),
+        appId: String,
+        appName: String
+    ): VideoOutput? {
+        val videoInputsWithMaxDuration = calculateMaxDurationRepo.execute(inputVideos, duration)
+        val compressedVideos = videoInputsWithMaxDuration.map {
+            compressVideoRepo.execute(
+                inputVideo = it.key,
+                format = format,
+                duration = it.value,
+                appId = appId,
+                appName = appName
+            )
+        }.filterIsInstance<FFmpegResult.Successful>().map {
+            it.outputPath
+        }
+        if (compressedVideos.isNotEmpty()) {
+            val concatVideo = concatVideosRepo.execute(
+                inputPaths = compressedVideos,
+                appId = appId,
+                appName = appName
+            )
+            if (concatVideo is FFmpegResult.Successful) {
+                return VideoOutput(
+                    id = concatVideo.inputId,
+                    uri = concatVideo.outputUri,
+                    absolutePath = concatVideo.outputPath
+                )
+            }
+        }
+        return null
     }
 
 
