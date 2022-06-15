@@ -41,6 +41,7 @@ class ConcatVideosRepo(
         )
         MyLogs.LOG("ConcatVideosRepo", "execute", "command: $command")
         return cmdUtil.executeSync(
+            "concatId",
             command,
             outputFile,
             appId

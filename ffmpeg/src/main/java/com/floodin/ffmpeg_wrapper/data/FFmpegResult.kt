@@ -4,6 +4,7 @@ import android.net.Uri
 
 sealed class FFmpegResult {
     data class Successful(
+        var inputId: String,
         var outputPath: String,
         var outputUri: Uri
     ) : FFmpegResult()

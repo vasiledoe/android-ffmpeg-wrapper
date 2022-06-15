@@ -16,10 +16,11 @@ class FileUtil(
 ) {
 
     fun getNewLocalFile(
+        appName: String,
         customDirName: String,
         fileName: String
     ): File {
-        val externalDir = getOutDirPath(customDirName)
+        val externalDir = getOutDirPath(appName, customDirName)
         if (externalDir.exists()) {
             val dir = File(externalDir.absolutePath)
             val localFile = File(dir, fileName)

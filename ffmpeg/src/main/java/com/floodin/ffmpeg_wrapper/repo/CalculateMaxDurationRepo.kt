@@ -1,6 +1,7 @@
 package com.floodin.ffmpeg_wrapper.repo
 
 import com.arthenica.ffmpegkit.FFprobeKit
+import com.floodin.ffmpeg_wrapper.data.VideoInput
 import com.floodin.ffmpeg_wrapper.util.MyLogs
 
 class CalculateMaxDurationRepo {
@@ -8,26 +9,26 @@ class CalculateMaxDurationRepo {
     /**
      * Determine max seconds from each video
      *
-     * @param inputPaths - video file absolute paths
+     * @param inputVideos - input video file metas
      * @param maxDuration - final video duration cannot exceed this limit
      * @return map<absolute path, amount of seconds>
      */
     fun execute(
-        inputPaths: List<String>,
+        inputVideos: List<VideoInput>,
         maxDuration: Float
-    ): Map<String, Float> {
-        val inputDurationMeta = mutableMapOf<String, Float>()
-        inputPaths.forEach { filePath ->
-            inputDurationMeta[filePath] = videoDuration(filePath)
+    ): Map<VideoInput, Float> {
+        val inputDurationMeta = mutableMapOf<VideoInput, Float>()
+        inputVideos.forEach { videoInput ->
+            inputDurationMeta[videoInput] = videoDuration(videoInput.absolutePath)
         }
         MyLogs.LOG("CalculateMaxDurationRepo", "execute", "inputDurationMeta: $inputDurationMeta")
         val anyVideoMaxDuration = maxVideoDuration(inputDurationMeta, maxDuration)
-        val inputDurationWithDurationMeta = mutableMapOf<String, Float>()
-        inputDurationMeta.forEach { (path, originalDuration) ->
+        val inputDurationWithDurationMeta = mutableMapOf<VideoInput, Float>()
+        inputDurationMeta.forEach { (videoInput, originalDuration) ->
             if (originalDuration <= anyVideoMaxDuration) {
-                inputDurationWithDurationMeta[path] = originalDuration
+                inputDurationWithDurationMeta[videoInput] = originalDuration
             } else {
-                inputDurationWithDurationMeta[path] = anyVideoMaxDuration
+                inputDurationWithDurationMeta[videoInput] = anyVideoMaxDuration
             }
         }
         MyLogs.LOG(
@@ -39,7 +40,7 @@ class CalculateMaxDurationRepo {
     }
 
     private fun maxVideoDuration(
-        inputDurationMeta: Map<String, Float>,
+        inputDurationMeta: Map<VideoInput, Float>,
         maxOutputDuration: Float,
         maxSingleVideoDuration: Float = maxOutputDuration / inputDurationMeta.size
     ): Float {

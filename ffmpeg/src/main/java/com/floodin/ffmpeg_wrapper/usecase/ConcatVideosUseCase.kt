@@ -1,8 +1,9 @@
 package com.floodin.ffmpeg_wrapper.usecase
 
-import android.net.Uri
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import com.floodin.ffmpeg_wrapper.data.VideoFormat
+import com.floodin.ffmpeg_wrapper.data.VideoInput
+import com.floodin.ffmpeg_wrapper.data.VideoOutput
 import com.floodin.ffmpeg_wrapper.repo.CalculateMaxDurationRepo
 import com.floodin.ffmpeg_wrapper.repo.CompressVideoRepo
 import com.floodin.ffmpeg_wrapper.repo.ConcatVideosRepo
@@ -16,7 +17,7 @@ class ConcatVideosUseCase(
     /**
      * Apply an algorithm of actions to cut, compress and concat a video set
      *
-     * @param inputPaths - file absolute paths
+     * @param inputVideos - input video file metas
      * @param format - desired video resolution
      * @param duration - desired file duration to take in consideration for final compressed video
      * @param appId - application ID
@@ -26,19 +27,19 @@ class ConcatVideosUseCase(
      * @param onErrorCallback - callback to return error
      */
     fun execute(
-        inputPaths: List<String>,
+        inputVideos: List<VideoInput>,
         format: VideoFormat,
         duration: Float = DEF_MAX_VIDEO_DURATION.toFloat(),
         appId: String,
         appName: String,
-        onSuccessCallback: (Uri, String) -> Unit,
+        onSuccessCallback: (VideoOutput) -> Unit,
         onProgressCallback: (String) -> Unit,
         onErrorCallback: (String) -> Unit
     ) {
-        val pathsWithMaxDuration = calculateMaxDurationRepo.execute(inputPaths, duration)
-        val compressedVideos = pathsWithMaxDuration.map {
+        val videoInputsWithMaxDuration = calculateMaxDurationRepo.execute(inputVideos, duration)
+        val compressedVideos = videoInputsWithMaxDuration.map {
             compressVideoRepo.execute(
-                inputPath = it.key,
+                inputVideo = it.key,
                 format = format,
                 duration = it.value,
                 appId = appId,
@@ -54,7 +55,13 @@ class ConcatVideosUseCase(
                 appName = appName
             )
             if (concatVideo is FFmpegResult.Successful) {
-                onSuccessCallback(concatVideo.outputUri, concatVideo.outputPath)
+                onSuccessCallback(
+                    VideoOutput(
+                        id = concatVideo.inputId,
+                        uri = concatVideo.outputUri,
+                        absolutePath = concatVideo.outputPath
+                    )
+                )
             } else {
                 onErrorCallback("Unexpected error")
             }

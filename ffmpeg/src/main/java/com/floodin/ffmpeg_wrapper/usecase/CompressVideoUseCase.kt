@@ -1,8 +1,9 @@
 package com.floodin.ffmpeg_wrapper.usecase
 
-import android.net.Uri
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import com.floodin.ffmpeg_wrapper.data.VideoFormat
+import com.floodin.ffmpeg_wrapper.data.VideoInput
+import com.floodin.ffmpeg_wrapper.data.VideoOutput
 import com.floodin.ffmpeg_wrapper.repo.CalculateMaxDurationRepo
 import com.floodin.ffmpeg_wrapper.repo.CompressVideoRepo
 import com.floodin.ffmpeg_wrapper.usecase.ConcatVideosUseCase.Companion.DEF_MAX_VIDEO_DURATION
@@ -15,7 +16,7 @@ class CompressVideoUseCase(
     /**
      * Apply compress only to a video
      *
-     * @param inputPath - file absolute path
+     * @param inputVideo - input video file meta
      * @param format - desired video resolution
      * @param duration - desired file duration to take in consideration for final compressed video
      * @param appId - application ID
@@ -25,19 +26,19 @@ class CompressVideoUseCase(
      * @param onErrorCallback - callback to return error
      */
     fun execute(
-        inputPath: String,
+        inputVideo: VideoInput,
         format: VideoFormat,
         duration: Float = DEF_MAX_VIDEO_DURATION.toFloat(),
         appId: String,
         appName: String,
-        onSuccessCallback: (Uri, String) -> Unit,
+        onSuccessCallback: (VideoOutput) -> Unit,
         onProgressCallback: (String) -> Unit,
         onErrorCallback: (String) -> Unit
     ) {
-        val pathsWithMaxDuration = calculateMaxDurationRepo.execute(listOf(inputPath), duration)
+        val pathsWithMaxDuration = calculateMaxDurationRepo.execute(listOf(inputVideo), duration)
         val compressedVideos = pathsWithMaxDuration.map {
             compressVideoRepo.execute(
-                inputPath = it.key,
+                inputVideo = it.key,
                 format = format,
                 duration = it.value,
                 appId = appId,
@@ -47,7 +48,13 @@ class CompressVideoUseCase(
         if (compressedVideos.isNotEmpty()) {
             val videoCompressed = compressedVideos.first()
             if (videoCompressed is FFmpegResult.Successful) {
-                onSuccessCallback(videoCompressed.outputUri, videoCompressed.outputPath)
+                onSuccessCallback(
+                    VideoOutput(
+                        id = videoCompressed.inputId,
+                        uri = videoCompressed.outputUri,
+                        absolutePath = videoCompressed.outputPath
+                    )
+                )
             } else {
                 onErrorCallback("Unexpected error")
             }
@@ -59,31 +66,35 @@ class CompressVideoUseCase(
     /**
      * Apply compress to multiple videos
      *
-     * @param inputPaths - file absolute paths
+     * @param inputVideos - input video file metas
      * @param format - desired video resolution
      * @param duration - desired file duration to take in consideration for final compressed video
      * @param appId - application ID
      * @param appName - application Name
-     * @return list of result <media uri, absolute path>
+     * @return list of result compressed videos
      */
     fun executeMultipleCompressSync(
-        inputPaths: List<String>,
+        inputVideos: List<VideoInput>,
         format: VideoFormat,
         duration: Float = DEF_MAX_VIDEO_DURATION.toFloat(),
         appId: String,
         appName: String
-    ): List<Pair<Uri, String>>? {
-        val pathsWithMaxDuration = calculateMaxDurationRepo.execute(inputPaths, duration)
+    ): List<VideoOutput> {
+        val pathsWithMaxDuration = calculateMaxDurationRepo.execute(inputVideos, duration)
         val compressedVideos = pathsWithMaxDuration.mapNotNull {
             val videoCompressedResult = compressVideoRepo.execute(
-                inputPath = it.key,
+                inputVideo = it.key,
                 format = format,
                 duration = it.value,
                 appId = appId,
                 appName = appName
             )
             if (videoCompressedResult is FFmpegResult.Successful) {
-                Pair(videoCompressedResult.outputUri, videoCompressedResult.outputPath)
+                VideoOutput(
+                    id = videoCompressedResult.inputId,
+                    uri = videoCompressedResult.outputUri,
+                    absolutePath = videoCompressedResult.outputPath
+                )
             } else {
                 null
             }

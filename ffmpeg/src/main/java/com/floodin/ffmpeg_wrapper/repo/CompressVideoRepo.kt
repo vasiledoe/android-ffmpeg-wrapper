@@ -2,6 +2,7 @@ package com.floodin.ffmpeg_wrapper.repo
 
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import com.floodin.ffmpeg_wrapper.data.VideoFormat
+import com.floodin.ffmpeg_wrapper.data.VideoInput
 import com.floodin.ffmpeg_wrapper.util.FfmpegCommandUtil
 import com.floodin.ffmpeg_wrapper.util.FileUtil
 import com.floodin.ffmpeg_wrapper.util.MyLogs
@@ -15,7 +16,7 @@ class CompressVideoRepo(
     /**
      * Compress video and generate new one
      *
-     * @param inputPath - file absolute path
+     * @param inputVideo - input video file meta
      * @param format - desired video resolution
      * @param duration - desired file duration to take in consideration for final compressed video
      * @param appId - application ID
@@ -23,7 +24,7 @@ class CompressVideoRepo(
      * @return result of ffmpeg command
      */
     fun execute(
-        inputPath: String,
+        inputVideo: VideoInput,
         format: VideoFormat,
         duration: Float?,
         appId: String,
@@ -35,13 +36,14 @@ class CompressVideoRepo(
             "${System.currentTimeMillis()}.mp4"
         )
         val command = generateCommand(
-            inputPath = inputPath,
+            inputPath = inputVideo.absolutePath,
             outputPath = outputFile.absolutePath,
             format = format,
             duration = duration
         )
         MyLogs.LOG("CompressVideoRepo", "compressVideo", "command: $command")
         return cmdUtil.executeSync(
+            inputVideo.id,
             command,
             outputFile,
             appId
