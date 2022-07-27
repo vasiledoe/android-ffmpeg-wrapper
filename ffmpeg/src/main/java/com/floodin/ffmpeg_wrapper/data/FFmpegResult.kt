@@ -1,15 +1,7 @@
 package com.floodin.ffmpeg_wrapper.data
 
-import android.net.Uri
-
 sealed class FFmpegResult {
-    data class Successful(
-        var inputId: String,
-        var outputPath: String,
-        var outputUri: Uri
-    ) : FFmpegResult()
-
+    data class Success(val data: VideoOutput) : FFmpegResult()
+    data class Error(val message: String) : FFmpegResult()
     object Cancel : FFmpegResult()
-
-    object Error : FFmpegResult()
 }

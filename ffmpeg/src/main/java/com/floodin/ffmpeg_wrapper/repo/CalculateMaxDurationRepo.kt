@@ -45,6 +45,10 @@ class CalculateMaxDurationRepo {
         maxSingleVideoDuration: Float = maxOutputDuration / inputDurationMeta.size
     ): Float {
         val longerVideoCount = inputDurationMeta.count { it.value > maxSingleVideoDuration }
+        // in case all videos are shorter then maxSingleVideoDuration
+        if (longerVideoCount == 0) {
+            return maxSingleVideoDuration
+        }
         val shorterVideoTotalDuration = inputDurationMeta.filter {
             it.value <= maxSingleVideoDuration
         }.values.sum()
@@ -69,8 +73,7 @@ class CalculateMaxDurationRepo {
 
     private fun videoDuration(inputPath: String): Float {
         val mediaInformation = FFprobeKit.getMediaInformation(inputPath)
-        val info = mediaInformation.mediaInformation
-        val duration = info.duration?.toFloat()
+        val duration = mediaInformation?.mediaInformation?.duration?.toFloat()
         MyLogs.LOG(
             "CalculateMaxDurationRepo",
             "videoDuration",

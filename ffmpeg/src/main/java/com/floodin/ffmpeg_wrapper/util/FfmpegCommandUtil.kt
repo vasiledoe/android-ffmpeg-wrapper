@@ -5,6 +5,7 @@ import androidx.core.content.FileProvider
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
+import com.floodin.ffmpeg_wrapper.data.VideoOutput
 import java.io.File
 
 
@@ -29,10 +30,12 @@ class FfmpegCommandUtil(
                 "$appId.fileprovider",
                 outputFile
             )
-            return FFmpegResult.Successful(
-                inputId = inputFileId,
-                outputPath = outputFile.absolutePath,
-                outputUri = uri
+            return FFmpegResult.Success(
+                VideoOutput(
+                    id = inputFileId,
+                    uri = uri,
+                    absolutePath = outputFile.absolutePath
+                )
             )
         } else if (ReturnCode.isCancel(session.returnCode)) {
             MyLogs.LOG(
@@ -45,9 +48,9 @@ class FfmpegCommandUtil(
             MyLogs.LOG(
                 "FfmpegCommandUtil",
                 "executeSync",
-                "FAILURE session: ${session.state}"
+                "FAILURE session state: ${session.state} session logsAsString: ${session.logsAsString}"
             )
-            return FFmpegResult.Error
+            return FFmpegResult.Error(session.logsAsString)
         }
     }
 }

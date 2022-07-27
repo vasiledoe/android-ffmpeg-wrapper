@@ -2,19 +2,9 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_concat_async"
-        android:orderInCategory="100"
-        android:title="Concat async"
-        app:showAsAction="never" />
-    <item
         android:id="@+id/action_concat_sync"
         android:orderInCategory="100"
         android:title="Concat sync"
-        app:showAsAction="never" />
-    <item
-        android:id="@+id/action_compress"
-        android:orderInCategory="100"
-        android:title="Compress"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_compress_multiple"

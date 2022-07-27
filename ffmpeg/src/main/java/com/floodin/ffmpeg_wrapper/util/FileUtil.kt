@@ -180,12 +180,6 @@ class FileUtil(
     }
 
     fun getMediaFileExtension(fileName: String): String {
-        return fileName.substringAfterLast(".", "unknown")
-    }
-
-
-    companion object {
-        const val USB_CACHE_IMPORT_DIR = "imported"
-        const val ONE_GB_IN_BYTES = 1073741824
+        return fileName.substringAfterLast(".", "unknown").lowercase()
     }
 }

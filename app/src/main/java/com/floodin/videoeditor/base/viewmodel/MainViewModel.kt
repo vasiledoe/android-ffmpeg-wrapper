@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import com.floodin.ffmpeg_wrapper.data.VideoFormat
 import com.floodin.ffmpeg_wrapper.data.VideoInput
 import com.floodin.ffmpeg_wrapper.usecase.CompressVideoUseCase
@@ -83,59 +84,6 @@ open class MainViewModel(
         }
     }
 
-    fun concatVideos() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val inputVideos = selectedVideoItems.value?.mapIndexed { index, videoItem ->
-                VideoInput(
-                    "videoId:$index",
-                    videoItem.path
-                )
-            }
-            MyLogs.LOG("MainViewModel", "concatVideos", "inputVideos:${inputVideos?.size}")
-
-            if (inputVideos.isNullOrEmpty() || inputVideos.size < 2) {
-                viewModelScope.launch(Dispatchers.Main) {
-                    publishError("Need at least 2 videos for concat")
-                }
-                return@launch
-            }
-
-            viewModelScope.launch(Dispatchers.Main) {
-                publishLoadingStateOn()
-            }
-
-            concatVideos.executeAsync(
-                inputVideos = inputVideos,
-                format = VideoFormat.HD,
-                duration = 15f,
-                appId = BuildConfig.APPLICATION_ID,
-                appName = resUtil.getStringRes(R.string.app_name),
-                onSuccessCallback = { videoOutput ->
-                    MyLogs.LOG(
-                        "MainViewModel",
-                        "concatVideos",
-                        "onSuccessCallback videoOutput:$videoOutput"
-                    )
-                    val newVideo = VideoItem(videoOutput.uri, videoOutput.absolutePath)
-                    val updatedList = mutableListOf(newVideo)
-                    selectedVideoItems.value?.let {
-                        updatedList.addAll(it)
-                    }
-                    viewModelScope.launch(Dispatchers.Main) {
-                        publishSuccess("Concat is done successfully!")
-                        selectedVideoItems.value = updatedList
-                    }
-                },
-                onProgressCallback = {
-                    MyLogs.LOG("MainViewModel", "concatVideos", "onProgressCallback")
-                },
-                onErrorCallback = {
-                    MyLogs.LOG("MainViewModel", "concatVideos", "onErrorCallback")
-                }
-            )
-        }
-    }
-
     fun concatVideosSync() {
         viewModelScope.launch(Dispatchers.IO) {
             val inputVideos = selectedVideoItems.value?.mapIndexed { index, videoItem ->
@@ -157,70 +105,19 @@ open class MainViewModel(
                 publishLoadingStateOn()
             }
 
-            val videoOutput = concatVideos.executeSync(
+            val result = concatVideos.executeSync(
                 inputVideos = inputVideos,
                 format = VideoFormat.HD,
                 duration = 15f,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
             )
+            MyLogs.LOG("MainViewModel", "concatVideosSync", "result:$result")
 
-            MyLogs.LOG(
-                "MainViewModel",
-                "concatVideosSync",
-                "onSuccessCallback videoOutput:$videoOutput"
-            )
-
-            videoOutput?.let { resultVideoMeta ->
-                val newVideo = VideoItem(resultVideoMeta.uri, resultVideoMeta.absolutePath)
-                val updatedList = mutableListOf(newVideo)
-                selectedVideoItems.value?.let {
-                    updatedList.addAll(it)
-                }
-                viewModelScope.launch(Dispatchers.Main) {
-                    publishSuccess("Concat is done successfully!")
-                    selectedVideoItems.value = updatedList
-                }
-            } ?: run {
-                viewModelScope.launch(Dispatchers.Main) {
-                    publishError("Failed to concat videos!")
-                }
-            }
-        }
-    }
-
-    fun compressVideo() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val inputVideos = selectedVideoItems.value?.mapIndexed { index, videoItem ->
-                VideoInput(
-                    "videoId:$index",
-                    videoItem.path
-                )
-            }
-            MyLogs.LOG("MainViewModel", "compressVideo", "inputVideos:${inputVideos?.size}")
-
-            if (inputVideos.isNullOrEmpty() || inputVideos.size > 1) {
-                viewModelScope.launch(Dispatchers.Main) {
-                    publishError("Need only one video for compressing")
-                }
-                return@launch
-            }
-
-            viewModelScope.launch(Dispatchers.Main) {
-                publishLoadingStateOn()
-            }
-            compressVideo.executeAsync(
-                inputVideo = inputVideos.first(),
-                format = VideoFormat.HD,
-                appId = BuildConfig.APPLICATION_ID,
-                appName = resUtil.getStringRes(R.string.app_name),
-                onSuccessCallback = { videoOutput ->
-                    MyLogs.LOG(
-                        "MainViewModel",
-                        "compressVideo",
-                        "onSuccessCallback videoOutput:$videoOutput"
-                    )
-                    val newVideo = VideoItem(videoOutput.uri, videoOutput.absolutePath)
+            when (result) {
+                is FFmpegResult.Success -> {
+                    val resultVideoMeta = result.data
+                    val newVideo = VideoItem(resultVideoMeta.uri, resultVideoMeta.absolutePath)
                     val updatedList = mutableListOf(newVideo)
                     selectedVideoItems.value?.let {
                         updatedList.addAll(it)
@@ -229,14 +126,16 @@ open class MainViewModel(
                         publishSuccess("Concat is done successfully!")
                         selectedVideoItems.value = updatedList
                     }
-                },
-                onProgressCallback = {
-                    MyLogs.LOG("MainViewModel", "compressVideo", "onProgressCallback")
-                },
-                onErrorCallback = {
-                    MyLogs.LOG("MainViewModel", "compressVideo", "onErrorCallback")
                 }
-            )
+                is FFmpegResult.Error -> {
+                    viewModelScope.launch(Dispatchers.Main) {
+                        publishError(result.message)
+                    }
+                }
+                is FFmpegResult.Cancel -> {
+                    publishError("Seems cancelled")
+                }
+            }
         }
     }
 
@@ -265,17 +164,28 @@ open class MainViewModel(
                 publishLoadingStateOn()
             }
 
-            val result = compressVideo.executeMultipleCompressSync(
+            val startTimeMillis = System.currentTimeMillis()
+            val results = compressVideo.executeSync(
                 inputVideos = inputVideos,
                 format = VideoFormat.HD,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
             )
+            val successCount = results.count { it is FFmpegResult.Success }
+            val failedCount = results.count { it is FFmpegResult.Error }
+            val cancelledCount = results.count { it is FFmpegResult.Cancel }
+            MyLogs.LOG(
+                "MainViewModel",
+                "compressMultipleVideos",
+                "it took:${System.currentTimeMillis() - startTimeMillis} " +
+                        "successCount:$successCount, failedCount:$failedCount, cancelledCount:$cancelledCount " +
+                        "all results:$results"
+            )
 
             viewModelScope.launch(Dispatchers.Main) {
-                publishLoadingStateOff()
+                val str = "Result: %d success, %d failed, %d cancelled"
+                publishSuccess(String.format(str, successCount, failedCount, cancelledCount))
             }
-            MyLogs.LOG("MainViewModel", "compressMultipleVideos", "result:$result")
         }
     }
 }
