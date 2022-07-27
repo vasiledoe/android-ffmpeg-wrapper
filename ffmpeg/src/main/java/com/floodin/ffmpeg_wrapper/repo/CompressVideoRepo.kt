@@ -26,7 +26,7 @@ class CompressVideoRepo(
     fun execute(
         inputVideo: VideoInput,
         format: VideoFormat,
-        duration: Float?,
+        duration: Float? = null,
         appId: String,
         appName: String
     ): FFmpegResult {
