@@ -45,6 +45,10 @@ class MainActivity : BaseMediaActivity() {
                 mViewModel.concatVideosSync()
                 true
             }
+            R.id.action_compress -> {
+                mViewModel.compressVideo()
+                true
+            }
             R.id.action_compress_multiple -> {
                 mViewModel.compressMultipleVideos()
                 true

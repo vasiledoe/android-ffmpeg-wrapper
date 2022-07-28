@@ -139,6 +139,50 @@ open class MainViewModel(
         }
     }
 
+    fun compressVideo() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val inputVideos = selectedVideoItems.value?.mapIndexed { index, videoItem ->
+                VideoInput(
+                    "videoId:$index",
+                    videoItem.path
+                )
+            }
+            MyLogs.LOG(
+                "MainViewModel",
+                "compressVideo",
+                "inputVideo:${inputVideos?.firstOrNull()}"
+            )
+
+            if (inputVideos.isNullOrEmpty()) {
+                viewModelScope.launch(Dispatchers.Main) {
+                    publishError("Need at least 1 video for compress")
+                }
+                return@launch
+            }
+
+            viewModelScope.launch(Dispatchers.Main) {
+                publishLoadingStateOn()
+            }
+
+            val startTimeMillis = System.currentTimeMillis()
+            val result = compressVideo.executeSync(
+                inputVideo = inputVideos.first(),
+                format = VideoFormat.HD,
+                appId = BuildConfig.APPLICATION_ID,
+                appName = resUtil.getStringRes(R.string.app_name)
+            )
+            MyLogs.LOG(
+                "MainViewModel",
+                "compressMultipleVideos",
+                "it took:${System.currentTimeMillis() - startTimeMillis}  result:$result"
+            )
+
+            viewModelScope.launch(Dispatchers.Main) {
+                publishSuccess("Result is $result")
+            }
+        }
+    }
+
     fun compressMultipleVideos() {
         viewModelScope.launch(Dispatchers.IO) {
             val inputVideos = selectedVideoItems.value?.mapIndexed { index, videoItem ->

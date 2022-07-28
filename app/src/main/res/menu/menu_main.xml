@@ -7,6 +7,11 @@
         android:title="Concat sync"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_compress"
+        android:orderInCategory="100"
+        android:title="Compress sync"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_compress_multiple"
         android:orderInCategory="100"
         android:title="Multiple compress sync"
