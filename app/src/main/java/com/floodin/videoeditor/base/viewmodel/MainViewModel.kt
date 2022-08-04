@@ -14,11 +14,11 @@ import com.floodin.ffmpeg_wrapper.util.MyLogs
 import com.floodin.videoeditor.BuildConfig
 import com.floodin.videoeditor.R
 import com.floodin.videoeditor.base.data.VideoItem
-import com.floodin.videoeditor.base.util.ResUtil
-import com.floodin.videoeditor.base.util.URIPathHelper
+import com.floodin.videoeditor.base.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
+import java.io.File
 
 open class MainViewModel(
     private val uRIPathHelper: URIPathHelper,
@@ -171,11 +171,27 @@ open class MainViewModel(
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
             )
-            MyLogs.LOG(
-                "MainViewModel",
-                "compressMultipleVideos",
-                "it took:${System.currentTimeMillis() - startTimeMillis}  result:$result"
-            )
+
+            // some logs
+            if (result is FFmpegResult.Success) {
+                val timeElapsed = (System.currentTimeMillis() - startTimeMillis).toPrettyTimeElapsed()
+
+                val inputVideoMeta = inputVideos.first()
+                val inputVideoFile = File(inputVideoMeta.absolutePath)
+                val inputVideoFileSize = inputVideoFile.length().toPrettyFileSize()
+
+                val outputVideoFile = File(result.data.absolutePath)
+                val outputVideoFileSize = outputVideoFile.length().toPrettyFileSize()
+
+                MyLogs.LOG(
+                    "MainViewModel",
+                    "compressMultipleVideos",
+                    "results \n timeElapsed: $timeElapsed \n " +
+                            "input Video : ${inputVideoFile.absolutePath} $inputVideoFileSize \n " +
+                            "output Video : ${outputVideoFile.absolutePath}  $outputVideoFileSize"
+                )
+            }
+
 
             viewModelScope.launch(Dispatchers.Main) {
                 publishSuccess("Result is $result")
