@@ -78,5 +78,6 @@ class ConcatVideosUseCase(
 
     companion object {
         const val DEF_MAX_VIDEO_DURATION = 10 * 60 // 10 min
+        const val DEF_MAX_COMPRESSED_VIDEO_DURATION = 5 * 60 // 5 min
     }
 }

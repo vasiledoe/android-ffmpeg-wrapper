@@ -39,6 +39,42 @@ class CalculateMaxDurationRepo {
         return inputDurationWithDurationMeta
     }
 
+    /**
+     * Determine max seconds from each video
+     *
+     * @param inputVideo - input video file metas
+     * @param maxDuration - final video duration cannot exceed this limit
+     * @return map<absolute path, amount of seconds>
+     */
+    fun execute(
+        inputVideo: VideoInput,
+        maxDuration: Float
+    ): Float? {
+        val inputDuration = videoDuration(inputVideo.absolutePath)
+        return if (inputDuration == 0f) {
+            MyLogs.LOG(
+                "CalculateMaxDurationRepo",
+                "execute",
+                "failed to get video duration - return null"
+            )
+            return null
+        } else if (inputDuration > maxDuration) {
+            MyLogs.LOG(
+                "CalculateMaxDurationRepo",
+                "execute",
+                "inputDuration is too big, return maxDuration: $maxDuration"
+            )
+            maxDuration
+        } else {
+            MyLogs.LOG(
+                "CalculateMaxDurationRepo",
+                "execute",
+                "inputDuration is shorter, return inputDuration: $inputDuration"
+            )
+            inputDuration
+        }
+    }
+
     private fun maxVideoDuration(
         inputDurationMeta: Map<VideoInput, Float>,
         maxOutputDuration: Float,

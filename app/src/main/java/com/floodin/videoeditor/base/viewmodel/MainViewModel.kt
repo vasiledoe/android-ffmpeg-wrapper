@@ -168,6 +168,7 @@ open class MainViewModel(
             val result = compressVideo.executeSync(
                 inputVideo = inputVideos.first(),
                 format = VideoFormat.HD,
+                duration = 30f,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
             )
