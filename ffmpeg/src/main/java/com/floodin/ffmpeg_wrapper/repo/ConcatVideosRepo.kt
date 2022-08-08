@@ -24,7 +24,7 @@ class ConcatVideosRepo(
         appId: String,
         appName: String
     ): FFmpegResult {
-        val outputFile = fileUtil.getNewLocalCacheFile(
+        val outputFile = fileUtil.getNewLocalFile(
             appName = appName,
             customDirName = CONCAT_DIR_NAME,
             fileName = "${System.currentTimeMillis()}.mp4"
@@ -54,7 +54,7 @@ class ConcatVideosRepo(
         appName: String
     ): String {
         val filePath = generateListFilePaths(fileUris, appName)
-        return "-f concat -safe 0 -i $filePath -c copy $outputFilePath"
+        return "-f concat -safe 0 -i '$filePath' -c copy '$outputFilePath'"
     }
 
     /**

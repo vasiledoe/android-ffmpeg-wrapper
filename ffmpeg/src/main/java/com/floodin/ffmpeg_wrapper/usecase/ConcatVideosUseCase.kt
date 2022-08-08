@@ -27,7 +27,7 @@ class ConcatVideosUseCase(
     fun executeSync(
         inputVideos: List<VideoInput>,
         format: VideoFormat,
-        duration: Float = DEF_MAX_VIDEO_DURATION.toFloat(),
+        duration: Float = DEF_MAX_CONCAT_OUTPUT_VIDEO_DURATION.toFloat(),
         appId: String,
         appName: String
     ): FFmpegResult {
@@ -77,7 +77,6 @@ class ConcatVideosUseCase(
 
 
     companion object {
-        const val DEF_MAX_VIDEO_DURATION = 10 * 60 // 10 min
-        const val DEF_MAX_COMPRESSED_VIDEO_DURATION = 5 * 60 // 5 min
+        const val DEF_MAX_CONCAT_OUTPUT_VIDEO_DURATION = 10 * 60 // 10 min
     }
 }

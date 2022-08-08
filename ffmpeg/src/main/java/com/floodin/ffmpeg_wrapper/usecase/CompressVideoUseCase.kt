@@ -27,7 +27,7 @@ class CompressVideoUseCase(
     fun executeSync(
         inputVideo: VideoInput,
         format: VideoFormat,
-        duration: Float = ConcatVideosUseCase.DEF_MAX_COMPRESSED_VIDEO_DURATION.toFloat(),
+        duration: Float = DEF_MAX_COMPRESS_OUTPUT_VIDEO_DURATION.toFloat(),
         appId: String,
         appName: String
     ): FFmpegResult = compressVideoRepo.execute(
@@ -64,5 +64,10 @@ class CompressVideoUseCase(
             }
         }
         return@withContext compressedVideoTasks.awaitAll()
+    }
+
+
+    companion object {
+        const val DEF_MAX_COMPRESS_OUTPUT_VIDEO_DURATION = 5 * 60 // 5 min
     }
 }

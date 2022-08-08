@@ -11,17 +11,27 @@ import android.provider.MediaStore
 import android.util.Size
 import android.widget.ImageView
 import com.floodin.ffmpeg_wrapper.util.MyLogs
+import com.floodin.videoeditor.R
 import com.floodin.videoeditor.base.data.VideoItem
 import com.floodin.videoeditor.base.util.toPx
 import java.io.File
 
 
 fun ImageView.loadFromMediaItem(media: VideoItem) {
-    MyLogs.LOG("loadFromMediaItem", "onError", "media: $media")
-    val thumbBitmap = media.toThumb(context)
-    setImageBitmap(thumbBitmap)
+    val thumbBitmap = try {
+        media.toThumb(context)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+    thumbBitmap?.let {
+        setImageBitmap(it)
+    } ?: run {
+        setImageResource(R.color.rec_red_50)
+    }
 }
 
+@Throws(Exception::class)
 fun VideoItem.toThumb(context: Context) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
     MyLogs.LOG("ImageViewExt", "toThumb", "Build.VERSION_CODES.R")
     ThumbnailUtils.createVideoThumbnail(
