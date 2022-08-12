@@ -1,5 +1,6 @@
 package com.floodin.ffmpeg_wrapper.repo
 
+import com.floodin.ffmpeg_wrapper.data.AudioInput
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import com.floodin.ffmpeg_wrapper.util.FfmpegCommandUtil
 import com.floodin.ffmpeg_wrapper.util.FileUtil
@@ -14,17 +15,19 @@ class ConcatVideosRepo(
     /**
      * Concat videos and generate new one
      *
-     * @param inputPaths - file absolute paths
+     * @param videoInputFilePaths - video file absolute paths
+     * @param audioInput - audio file absolute path
      * @param appId - application ID
      * @param appName - application Name
      * @return result of ffmpeg command
      */
     fun execute(
-        inputPaths: List<String>,
+        videoInputFilePaths: List<String>,
+        audioInput: AudioInput?,
         appId: String,
         appName: String
     ): FFmpegResult {
-        val outputFile = fileUtil.getNewLocalFile(
+        val videoOutputFile = fileUtil.getNewLocalFile(
             appName = appName,
             customDirName = CONCAT_DIR_NAME,
             fileName = "${System.currentTimeMillis()}.mp4"
@@ -32,39 +35,46 @@ class ConcatVideosRepo(
         MyLogs.LOG(
             "ConcatVideosRepo",
             "execute",
-            "inputPaths:$inputPaths outputFilePath: ${outputFile.absolutePath}"
+            "videoInputFilePaths:$videoInputFilePaths audioInput: $audioInput videoOutputFile: ${videoOutputFile.absolutePath}"
         )
         val command = generateCommand(
-            fileUris = inputPaths,
-            outputFilePath = outputFile.absolutePath,
+            videoInputFilePaths = videoInputFilePaths,
+            audioInput = audioInput,
+            videoOutputFilePath = videoOutputFile.absolutePath,
             appName = appName
         )
         MyLogs.LOG("ConcatVideosRepo", "execute", "command: $command")
         return cmdUtil.executeSync(
             "concatId",
             command,
-            outputFile,
+            videoOutputFile,
             appId
         )
     }
 
     private fun generateCommand(
-        fileUris: List<String>,
-        outputFilePath: String,
+        videoInputFilePaths: List<String>,
+        audioInput: AudioInput?,
+        videoOutputFilePath: String,
         appName: String
     ): String {
-        val filePath = generateListFilePaths(fileUris, appName)
-        return "-f concat -safe 0 -i '$filePath' -c copy '$outputFilePath'"
+        val filePath = generateListFilePaths(videoInputFilePaths, appName)
+        return if (audioInput != null) {
+            // TODO: include audio track data
+            "-f concat -safe 0 -i '$filePath' -c copy '$videoOutputFilePath'"
+        } else {
+            "-f concat -safe 0 -i '$filePath' -c copy '$videoOutputFilePath'"
+        }
     }
 
     /**
      * Generate ffmpeg file paths list
      *
-     * @param inputs - input files for ffmpeg
+     * @param videoInputFilePaths - input video file paths for ffmpeg
      * @return file path
      */
     private fun generateListFilePaths(
-        inputs: List<String>,
+        videoInputFilePaths: List<String>,
         appName: String
     ): String {
         val list: File
@@ -76,7 +86,7 @@ class ConcatVideosRepo(
                 fileName = "list.txt"
             )
             writer = BufferedWriter(OutputStreamWriter(FileOutputStream(list)))
-            for (input in inputs) {
+            for (input in videoInputFilePaths) {
                 writer.write("file '$input'\n")
                 MyLogs.LOG(
                     "ConcatVideosRepo",
@@ -104,6 +114,7 @@ class ConcatVideosRepo(
 
 
     companion object {
+        const val AUDIO_TRACKS_DIR_NAME = "audio_tracks"
         const val CONCAT_DIR_NAME = "concat"
     }
 }
