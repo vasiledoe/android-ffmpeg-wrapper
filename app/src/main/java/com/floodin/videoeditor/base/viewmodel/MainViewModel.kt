@@ -125,8 +125,8 @@ open class MainViewModel(
             )
             val audioInput = if (audioTrackFile.exists()) {
                 AudioInput(
-                    videoLevel = 30,
-                    trackLevel = 90,
+                    videoLevel = 80,
+                    trackLevel = 20,
                     trackAbsolutePath = audioTrackFile.absolutePath
                 )
             } else {
@@ -137,7 +137,7 @@ open class MainViewModel(
                 inputVideos = inputVideos,
                 inputAudio = audioInput,
                 format = VideoFormat.HD,
-                duration = 15f,
+                duration = 60f,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
             )

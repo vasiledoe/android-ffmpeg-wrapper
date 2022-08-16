@@ -60,7 +60,6 @@ class ConcatVideosRepo(
     ): String {
         val filePath = generateListFilePaths(videoInputFilePaths, appName)
         return if (audioInput != null) {
-            // TODO: include audio track data
             "-f concat -safe 0 -i '$filePath' -stream_loop -1 -i '${audioInput.trackAbsolutePath}' -filter_complex \"[0:a]volume=${audioInput.videoLevel}/100[aorg];[1:a]volume=${audioInput.trackLevel}/100[atrk];[aorg][atrk]amix=inputs=2:duration=shortest[aout]\" -map 0:v -map \"[aout]\" -c:v copy -c:a aac '$videoOutputFilePath'"
         } else {
             "-f concat -safe 0 -i '$filePath' -c copy '$videoOutputFilePath'"
