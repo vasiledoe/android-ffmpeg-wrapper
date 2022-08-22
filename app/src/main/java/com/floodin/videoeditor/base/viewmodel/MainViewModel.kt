@@ -5,16 +5,22 @@ import android.net.Uri
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.floodin.ffmpeg_wrapper.data.AudioInput
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import com.floodin.ffmpeg_wrapper.data.VideoFormat
 import com.floodin.ffmpeg_wrapper.data.VideoInput
+import com.floodin.ffmpeg_wrapper.repo.ConcatVideosRepo
 import com.floodin.ffmpeg_wrapper.usecase.CompressVideoUseCase
 import com.floodin.ffmpeg_wrapper.usecase.ConcatVideosUseCase
+import com.floodin.ffmpeg_wrapper.util.FileUtil
 import com.floodin.ffmpeg_wrapper.util.MyLogs
 import com.floodin.videoeditor.BuildConfig
 import com.floodin.videoeditor.R
 import com.floodin.videoeditor.base.data.VideoItem
-import com.floodin.videoeditor.base.util.*
+import com.floodin.videoeditor.base.util.ResUtil
+import com.floodin.videoeditor.base.util.URIPathHelper
+import com.floodin.videoeditor.base.util.toPrettyFileSize
+import com.floodin.videoeditor.base.util.toPrettyTimeElapsed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
@@ -24,7 +30,8 @@ open class MainViewModel(
     private val uRIPathHelper: URIPathHelper,
     private val concatVideos: ConcatVideosUseCase,
     private val compressVideo: CompressVideoUseCase,
-    private val resUtil: ResUtil
+    private val resUtil: ResUtil,
+    private val fileUtil: FileUtil
 ) : ViewModel(), KoinComponent {
 
     val successMsg = MutableLiveData<String>()
@@ -105,10 +112,32 @@ open class MainViewModel(
                 publishLoadingStateOn()
             }
 
+            val externalDir = fileUtil.getOutDirPath(
+                appName = resUtil.getStringRes(R.string.app_name),
+                dirName = ConcatVideosRepo.AUDIO_TRACKS_DIR_NAME
+            )
+            val trackAbsolutePath = externalDir.absolutePath + "/test.mp3"
+            val audioTrackFile = File(trackAbsolutePath)
+            MyLogs.LOG(
+                "MainViewModel",
+                "concatVideosSync",
+                "trackAbsolutePath:$trackAbsolutePath audioTrackFile exists: ${audioTrackFile.exists()}"
+            )
+            val audioInput = if (audioTrackFile.exists()) {
+                AudioInput(
+                    videoLevel = 80,
+                    trackLevel = 20,
+                    trackAbsolutePath = audioTrackFile.absolutePath
+                )
+            } else {
+                null
+            }
+
             val result = concatVideos.executeSync(
                 inputVideos = inputVideos,
+                inputAudio = audioInput,
                 format = VideoFormat.HD,
-                duration = 15f,
+                duration = 60f,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
             )

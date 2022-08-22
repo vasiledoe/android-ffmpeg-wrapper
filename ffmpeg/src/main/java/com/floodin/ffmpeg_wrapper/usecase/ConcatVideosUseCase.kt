@@ -1,5 +1,6 @@
 package com.floodin.ffmpeg_wrapper.usecase
 
+import com.floodin.ffmpeg_wrapper.data.AudioInput
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import com.floodin.ffmpeg_wrapper.data.VideoFormat
 import com.floodin.ffmpeg_wrapper.data.VideoInput
@@ -18,6 +19,7 @@ class ConcatVideosUseCase(
      * Apply an algorithm of actions to cut, compress and concat a video set
      *
      * @param inputVideos - input video file metas
+     * @param inputAudio - input audio file meta
      * @param format - desired video resolution
      * @param duration - desired file duration to take in consideration for final compressed video
      * @param appId - application ID
@@ -26,6 +28,7 @@ class ConcatVideosUseCase(
      */
     fun executeSync(
         inputVideos: List<VideoInput>,
+        inputAudio: AudioInput?,
         format: VideoFormat,
         duration: Float = DEF_MAX_CONCAT_OUTPUT_VIDEO_DURATION.toFloat(),
         appId: String,
@@ -69,7 +72,8 @@ class ConcatVideosUseCase(
             "return final result"
         )
         return concatVideosRepo.execute(
-            inputPaths = compressedVideoPaths,
+            videoInputFilePaths = compressedVideoPaths,
+            audioInput = inputAudio,
             appId = appId,
             appName = appName
         )
