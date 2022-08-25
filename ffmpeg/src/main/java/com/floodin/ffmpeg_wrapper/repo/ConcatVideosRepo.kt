@@ -29,7 +29,7 @@ class ConcatVideosRepo(
     ): FFmpegResult {
         val videoOutputFile = fileUtil.getNewLocalFile(
             appName = appName,
-            customDirName = CONCAT_DIR_NAME,
+            customDirName = "$appName $CONCAT_DIR_NAME",
             fileName = "${System.currentTimeMillis()}.mp4"
         )
         MyLogs.LOG(
@@ -81,7 +81,7 @@ class ConcatVideosRepo(
         try {
             list = fileUtil.getNewLocalCacheFile(
                 appName = appName,
-                customDirName = CONCAT_DIR_NAME,
+                customDirName = "$appName $CONCAT_DIR_NAME",
                 fileName = "list.txt"
             )
             writer = BufferedWriter(OutputStreamWriter(FileOutputStream(list)))
@@ -114,6 +114,6 @@ class ConcatVideosRepo(
 
     companion object {
         const val AUDIO_TRACKS_DIR_NAME = "audio_tracks"
-        const val CONCAT_DIR_NAME = "concat"
+        const val CONCAT_DIR_NAME = "Videos"
     }
 }
