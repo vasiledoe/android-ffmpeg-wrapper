@@ -85,12 +85,19 @@ class CalculateMaxDurationRepo {
         if (longerVideoCount == 0) {
             return maxSingleVideoDuration
         }
-        val shorterVideoTotalDuration = inputDurationMeta.filter {
-            it.value <= maxSingleVideoDuration
-        }.values.sum()
+
+        val shorterVideos = inputDurationMeta.filter { it.value <= maxSingleVideoDuration }
+        val shorterVideoCount = shorterVideos.size
+        val shorterVideoTotalDuration = shorterVideos.values.sum()
+
         val remainingDuration = maxOutputDuration - shorterVideoTotalDuration
         val newMaxDuration = remainingDuration / longerVideoCount
-        return if (longerVideoCount <= 1 || shorterVideoTotalDuration == 0f) {
+        val areAllShorterVideosReallyShorter = shorterVideos.all { it.value <= newMaxDuration }
+
+        // all videos are longer or
+        // only one video has a bit more then others or
+        // all initially considered shorter videos are NO longer then new duration for long videos
+        return if (shorterVideoCount == 0 || longerVideoCount == 1 || areAllShorterVideosReallyShorter) {
             MyLogs.LOG(
                 "CalculateMaxDurationRepo",
                 "maxVideoDuration",

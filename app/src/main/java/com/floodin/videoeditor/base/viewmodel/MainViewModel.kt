@@ -137,7 +137,7 @@ open class MainViewModel(
                 inputVideos = inputVideos,
                 inputAudio = audioInput,
                 format = VideoFormat.HD,
-                duration = 60f,
+//                duration = 60f,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
             )
