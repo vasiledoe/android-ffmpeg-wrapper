@@ -1,10 +1,11 @@
 package com.floodin.ffmpeg_wrapper.repo
 
-import com.arthenica.ffmpegkit.FFprobeKit
 import com.floodin.ffmpeg_wrapper.data.VideoInput
 import com.floodin.ffmpeg_wrapper.util.MyLogs
 
-class CalculateMaxDurationRepo {
+class CalculateMaxDurationRepo(
+    private val mediaInfoRepo: MediaInfoRepo
+) {
 
     /**
      * Determine max seconds from each video
@@ -19,7 +20,7 @@ class CalculateMaxDurationRepo {
     ): Map<VideoInput, Float> {
         val inputDurationMeta = mutableMapOf<VideoInput, Float>()
         inputVideos.forEach { videoInput ->
-            inputDurationMeta[videoInput] = videoDuration(videoInput.absolutePath)
+            inputDurationMeta[videoInput] = mediaInfoRepo.videoDuration(videoInput.absolutePath)
         }
         MyLogs.LOG("CalculateMaxDurationRepo", "execute", "inputDurationMeta: $inputDurationMeta")
         val anyVideoMaxDuration = maxVideoDuration(inputDurationMeta, maxDuration)
@@ -50,7 +51,7 @@ class CalculateMaxDurationRepo {
         inputVideo: VideoInput,
         maxDuration: Float
     ): Float? {
-        val inputDuration = videoDuration(inputVideo.absolutePath)
+        val inputDuration = mediaInfoRepo.videoDuration(inputVideo.absolutePath)
         return if (inputDuration == 0f) {
             MyLogs.LOG(
                 "CalculateMaxDurationRepo",
@@ -112,16 +113,5 @@ class CalculateMaxDurationRepo {
             )
             maxVideoDuration(inputDurationMeta, maxOutputDuration, newMaxDuration)
         }
-    }
-
-    private fun videoDuration(inputPath: String): Float {
-        val mediaInformation = FFprobeKit.getMediaInformation(inputPath)
-        val duration = mediaInformation?.mediaInformation?.duration?.toFloat()
-        MyLogs.LOG(
-            "CalculateMaxDurationRepo",
-            "videoDuration",
-            "inputPath:$inputPath duration:$duration"
-        )
-        return duration ?: 0f
     }
 }
