@@ -5,5 +5,6 @@ import android.net.Uri
 data class VideoOutput(
     val id: String,
     val uri: Uri,
-    val absolutePath: String
+    val absolutePath: String,
+    val size: Long
 )

@@ -34,7 +34,8 @@ class FfmpegCommandUtil(
                 VideoOutput(
                     id = inputFileId,
                     uri = uri,
-                    absolutePath = outputFile.absolutePath
+                    absolutePath = outputFile.absolutePath,
+                    size = outputFile.length()
                 )
             )
         } else if (ReturnCode.isCancel(session.returnCode)) {
