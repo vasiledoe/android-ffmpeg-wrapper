@@ -7,8 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.floodin.ffmpeg_wrapper.data.AudioInput
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
-import com.floodin.ffmpeg_wrapper.data.VideoFormat
 import com.floodin.ffmpeg_wrapper.data.VideoInput
+import com.floodin.ffmpeg_wrapper.data.VideoResolution
 import com.floodin.ffmpeg_wrapper.repo.ConcatVideosRepo
 import com.floodin.ffmpeg_wrapper.usecase.CompressVideoUseCase
 import com.floodin.ffmpeg_wrapper.usecase.ConcatVideosUseCase
@@ -136,7 +136,7 @@ open class MainViewModel(
             val result = concatVideos.executeSync(
                 inputVideos = inputVideos,
                 inputAudio = audioInput,
-                format = VideoFormat.HD,
+                resolution = VideoResolution.HD,
 //                duration = 60f,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
@@ -162,7 +162,7 @@ open class MainViewModel(
                     }
                 }
                 is FFmpegResult.Cancel -> {
-                    publishError("Seems cancelled")
+                    publishError("Concat seems cancelled")
                 }
             }
         }
@@ -189,63 +189,9 @@ open class MainViewModel(
                 return@launch
             }
 
-            viewModelScope.launch(Dispatchers.Main) {
-                publishLoadingStateOn()
-            }
-
-            val startTimeMillis = System.currentTimeMillis()
-            val result = compressVideo.executeSync(
-                inputVideo = inputVideos.first(),
-                format = VideoFormat.HD,
-//                duration = 30f,
-                appId = BuildConfig.APPLICATION_ID,
-                appName = resUtil.getStringRes(R.string.app_name)
-            )
-
-            // some logs
-            if (result is FFmpegResult.Success) {
-                val timeElapsed = (System.currentTimeMillis() - startTimeMillis).toPrettyTimeElapsed()
-
-                val inputVideoMeta = inputVideos.first()
-                val inputVideoFile = File(inputVideoMeta.absolutePath)
-                val inputVideoFileSize = inputVideoFile.length().toPrettyFileSize()
-
-                val outputVideoFile = File(result.data.absolutePath)
-                val outputVideoFileSize = outputVideoFile.length().toPrettyFileSize()
-
-                MyLogs.LOG(
-                    "MainViewModel",
-                    "compressMultipleVideos",
-                    "results \n timeElapsed: $timeElapsed \n " +
-                            "input Video : ${inputVideoFile.absolutePath} $inputVideoFileSize \n " +
-                            "output Video : ${outputVideoFile.absolutePath}  $outputVideoFileSize"
-                )
-            }
-
-
-            viewModelScope.launch(Dispatchers.Main) {
-                publishSuccess("Result is $result")
-            }
-        }
-    }
-
-    fun compressMultipleVideos() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val inputVideos = selectedVideoItems.value?.mapIndexed { index, videoItem ->
-                VideoInput(
-                    "videoId:$index",
-                    videoItem.path
-                )
-            }
-            MyLogs.LOG(
-                "MainViewModel",
-                "compressMultipleVideos",
-                "inputVideos:${inputVideos?.size}"
-            )
-
-            if (inputVideos.isNullOrEmpty() || inputVideos.size < 2) {
+            if (inputVideos.size > 1) {
                 viewModelScope.launch(Dispatchers.Main) {
-                    publishError("Need at least 2 videos for multiple compress")
+                    publishError("Need only 1 video for compress")
                 }
                 return@launch
             }
@@ -255,26 +201,51 @@ open class MainViewModel(
             }
 
             val startTimeMillis = System.currentTimeMillis()
-            val results = compressVideo.executeSync(
-                inputVideos = inputVideos,
-                format = VideoFormat.HD,
+            val result = compressVideo.executeSync(
+                inputVideo = inputVideos.first(),
+                resolution = VideoResolution.HD,
+//                duration = 30f,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
             )
-            val successCount = results.count { it is FFmpegResult.Success }
-            val failedCount = results.count { it is FFmpegResult.Error }
-            val cancelledCount = results.count { it is FFmpegResult.Cancel }
-            MyLogs.LOG(
-                "MainViewModel",
-                "compressMultipleVideos",
-                "it took:${System.currentTimeMillis() - startTimeMillis} " +
-                        "successCount:$successCount, failedCount:$failedCount, cancelledCount:$cancelledCount " +
-                        "all results:$results"
-            )
 
-            viewModelScope.launch(Dispatchers.Main) {
-                val str = "Result: %d success, %d failed, %d cancelled"
-                publishSuccess(String.format(str, successCount, failedCount, cancelledCount))
+            when (result) {
+                is FFmpegResult.Success -> {
+                    val timeElapsed = (System.currentTimeMillis() - startTimeMillis).toPrettyTimeElapsed()
+                    val inputVideoMeta = inputVideos.first()
+                    val inputVideoFile = File(inputVideoMeta.absolutePath)
+                    val inputVideoFileSize = inputVideoFile.length().toPrettyFileSize()
+
+                    val outputVideoFile = File(result.data.absolutePath)
+                    val outputVideoFileSize = outputVideoFile.length().toPrettyFileSize()
+
+                    MyLogs.LOG(
+                        "MainViewModel",
+                        "compressVideo",
+                        "results \n timeElapsed: $timeElapsed \n " +
+                                "input Video : ${inputVideoFile.absolutePath} $inputVideoFileSize \n " +
+                                "output Video : ${outputVideoFile.absolutePath}  $outputVideoFileSize"
+                    )
+
+                    val resultVideoMeta = result.data
+                    val newVideo = VideoItem(resultVideoMeta.uri, resultVideoMeta.absolutePath)
+                    val updatedList = mutableListOf(newVideo)
+                    selectedVideoItems.value?.let {
+                        updatedList.addAll(it)
+                    }
+                    viewModelScope.launch(Dispatchers.Main) {
+                        publishSuccess("Compress is done successfully!")
+                        selectedVideoItems.value = updatedList
+                    }
+                }
+                is FFmpegResult.Error -> {
+                    viewModelScope.launch(Dispatchers.Main) {
+                        publishError(result.message)
+                    }
+                }
+                is FFmpegResult.Cancel -> {
+                    publishError("Compress seems cancelled")
+                }
             }
         }
     }

@@ -1,8 +1,8 @@
 package com.floodin.ffmpeg_wrapper.repo
 
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
-import com.floodin.ffmpeg_wrapper.data.VideoFormat
 import com.floodin.ffmpeg_wrapper.data.VideoInput
+import com.floodin.ffmpeg_wrapper.data.VideoResolution
 import com.floodin.ffmpeg_wrapper.util.FfmpegCommandUtil
 import com.floodin.ffmpeg_wrapper.util.FileUtil
 import com.floodin.ffmpeg_wrapper.util.MyLogs
@@ -17,7 +17,7 @@ class CompressVideoRepo(
      * Compress video and generate new one
      *
      * @param inputVideo - input video file meta
-     * @param format - desired video resolution
+     * @param resolution - desired video resolution
      * @param duration - desired file duration to take in consideration for final compressed video
      * @param appId - application ID
      * @param appName - application Name
@@ -25,8 +25,9 @@ class CompressVideoRepo(
      */
     fun execute(
         inputVideo: VideoInput,
-        format: VideoFormat,
+        resolution: VideoResolution,
         duration: Float? = null,
+        isPortrait: Boolean,
         appId: String,
         appName: String
     ): FFmpegResult {
@@ -38,7 +39,8 @@ class CompressVideoRepo(
         val command = generateCommand(
             inputPath = inputVideo.absolutePath,
             outputPath = outputFile.absolutePath,
-            format = format,
+            resolution = resolution,
+            isPortrait = isPortrait,
             duration = duration
         )
         MyLogs.LOG("CompressVideoRepo", "compressVideo", "command: $command")
@@ -53,25 +55,36 @@ class CompressVideoRepo(
     private fun generateCommand(
         inputPath: String,
         outputPath: String,
-        format: VideoFormat,
+        resolution: VideoResolution,
+        isPortrait: Boolean,
         duration: Float?
     ): String {
         //ffmpeg -i input.mp4 -c:a copy -c:v vp9 -b:v 1M output.mp4
         //ffmpeg -i input.mp4 -c:a copy -s hd720 output.mp4
         //ffmpeg -y -i /source-path/input.mp4 -s 480x320 -r 25 -vcodec mpeg4 -b:v 300k -b:a 48000 -ac 2 -ar 22050 /source/output.mp4
 
-        val widthHeight = format.value.split("x")
-        val currentMaxBitrate = if (format == VideoFormat.FHD) FHD_MAX_RATE else HD_MAX_RATE
-        val currentCrf = if (format == VideoFormat.FHD) FHD_CRF else HD_CRF
+        val currentMaxBitrate = if (resolution == VideoResolution.FHD) FHD_MAX_RATE else HD_MAX_RATE
+        val currentCrf = if (resolution == VideoResolution.FHD) FHD_CRF else HD_CRF
+        val widthHeight = resolution.value.split("x")
+        val width = if (isPortrait) {
+            widthHeight[1]
+        } else {
+            widthHeight[0]
+        }
+        val height = if (isPortrait) {
+            widthHeight[0]
+        } else {
+            widthHeight[1]
+        }
         MyLogs.LOG(
             "generateCommand",
             "generateCommand",
-            "widthHeight: $widthHeight currentMaxBitrate: $currentMaxBitrate currentCrf: $currentCrf"
+            "widthHeight: $widthHeight width:$width height:$height currentMaxBitrate: $currentMaxBitrate currentCrf: $currentCrf"
         )
         return if (duration != null) {
-            "-y -i '$inputPath' -f lavfi -i anullsrc -vf \"scale=w='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),${widthHeight[0]},-2)':h='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),-2,${widthHeight[1]})',setsar=1,setdar=a,pad=w=${widthHeight[0]}:h=${widthHeight[1]}:x=-1:y=-1\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast -t $duration $outputPath"
+            "-y -i '$inputPath' -f lavfi -i anullsrc -vf \"scale=w='if(gte(iw/ih,${width}/${height}),${width},-2)':h='if(gte(iw/ih,${width}/${height}),-2,${height})',setsar=1,setdar=a,pad=w=${width}:h=${height}:x=-1:y=-1\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast -t $duration $outputPath"
         } else {
-            "-y -i '$inputPath' -f lavfi -i anullsrc -vf \"scale=w='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),${widthHeight[0]},-2)':h='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),-2,${widthHeight[1]})',setsar=1,setdar=a,pad=w=${widthHeight[0]}:h=${widthHeight[1]}:x=-1:y=-1\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast $outputPath"
+            "-y -i '$inputPath' -f lavfi -i anullsrc -vf \"scale=w='if(gte(iw/ih,${width}/${height}),${width},-2)':h='if(gte(iw/ih,${width}/${height}),-2,${height})',setsar=1,setdar=a,pad=w=${width}:h=${height}:x=-1:y=-1\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast $outputPath"
         }
     }
 

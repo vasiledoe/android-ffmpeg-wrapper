@@ -49,10 +49,6 @@ class MainActivity : BaseMediaActivity() {
                 mViewModel.compressVideo()
                 true
             }
-            R.id.action_compress_multiple -> {
-                mViewModel.compressMultipleVideos()
-                true
-            }
             else -> super.onOptionsItemSelected(item)
         }
     }
