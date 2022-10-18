@@ -2,17 +2,19 @@ package com.floodin.ffmpeg_wrapper.usecase
 
 import com.floodin.ffmpeg_wrapper.data.AudioInput
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
-import com.floodin.ffmpeg_wrapper.data.VideoFormat
 import com.floodin.ffmpeg_wrapper.data.VideoInput
+import com.floodin.ffmpeg_wrapper.data.VideoResolution
 import com.floodin.ffmpeg_wrapper.repo.CalculateMaxDurationRepo
 import com.floodin.ffmpeg_wrapper.repo.CompressVideoRepo
 import com.floodin.ffmpeg_wrapper.repo.ConcatVideosRepo
+import com.floodin.ffmpeg_wrapper.repo.MediaInfoRepo
 import com.floodin.ffmpeg_wrapper.util.MyLogs
 
 class ConcatVideosUseCase(
     private val calculateMaxDurationRepo: CalculateMaxDurationRepo,
     private val compressVideoRepo: CompressVideoRepo,
     private val concatVideosRepo: ConcatVideosRepo,
+    private val mediaInfoRepo: MediaInfoRepo
 ) {
 
     /**
@@ -20,7 +22,7 @@ class ConcatVideosUseCase(
      *
      * @param inputVideos - input video file metas
      * @param inputAudio - input audio file meta
-     * @param format - desired video resolution
+     * @param resolution - desired video resolution
      * @param duration - desired file duration to take in consideration for final compressed video
      * @param appId - application ID
      * @param appName - application Name
@@ -29,17 +31,21 @@ class ConcatVideosUseCase(
     fun executeSync(
         inputVideos: List<VideoInput>,
         inputAudio: AudioInput?,
-        format: VideoFormat,
+        resolution: VideoResolution,
         duration: Float = DEF_MAX_CONCAT_OUTPUT_VIDEO_DURATION.toFloat(),
         appId: String,
         appName: String
     ): FFmpegResult {
         val videoInputsWithMaxDuration = calculateMaxDurationRepo.execute(inputVideos, duration)
+        val isPortrait = mediaInfoRepo.isVideoInPortrait(inputVideos.first().absolutePath)
+        MyLogs.LOG("ConcatVideosUseCase", "executeSync", "isPortrait:$isPortrait")
+
         val compressVireoResults = videoInputsWithMaxDuration.map {
             val result = compressVideoRepo.execute(
                 inputVideo = it.key,
-                format = format,
+                resolution = resolution,
                 duration = it.value,
+                isPortrait = isPortrait,
                 appId = appId,
                 appName = appName
             )
