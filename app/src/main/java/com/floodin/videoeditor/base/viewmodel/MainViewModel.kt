@@ -5,10 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.floodin.ffmpeg_wrapper.data.AudioInput
-import com.floodin.ffmpeg_wrapper.data.FFmpegResult
-import com.floodin.ffmpeg_wrapper.data.VideoInput
-import com.floodin.ffmpeg_wrapper.data.VideoResolution
+import com.floodin.ffmpeg_wrapper.data.*
 import com.floodin.ffmpeg_wrapper.repo.ConcatVideosRepo
 import com.floodin.ffmpeg_wrapper.usecase.CompressVideoUseCase
 import com.floodin.ffmpeg_wrapper.usecase.ConcatVideosUseCase
@@ -136,7 +133,7 @@ open class MainViewModel(
             val result = concatVideos.executeSync(
                 inputVideos = inputVideos,
                 inputAudio = audioInput,
-                resolution = VideoResolution.HD,
+                resolution = VideoResolution(1280, 720),
 //                duration = 60f,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
@@ -203,7 +200,7 @@ open class MainViewModel(
             val startTimeMillis = System.currentTimeMillis()
             val result = compressVideo.executeSync(
                 inputVideo = inputVideos.first(),
-                resolution = VideoResolution.HD,
+                resolution = VideoResolution(1280, 720),
 //                duration = 30f,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
