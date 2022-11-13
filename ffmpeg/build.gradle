@@ -10,8 +10,8 @@ android {
         minSdk 26
         targetSdk 33
 
-        versionCode 1027
-        versionName "1.0.27"
+        versionCode 1028
+        versionName "1.0.28"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -37,8 +37,8 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'com.google.android.material:material:1.7.0'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1'
-    implementation 'com.google.code.gson:gson:2.8.9'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+    implementation 'com.google.code.gson:gson:2.9.0'
 
     // File
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'

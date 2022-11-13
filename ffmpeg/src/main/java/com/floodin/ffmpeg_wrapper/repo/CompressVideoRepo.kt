@@ -3,6 +3,7 @@ package com.floodin.ffmpeg_wrapper.repo
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import com.floodin.ffmpeg_wrapper.data.VideoInput
 import com.floodin.ffmpeg_wrapper.data.VideoResolution
+import com.floodin.ffmpeg_wrapper.data.isBetterThenHD
 import com.floodin.ffmpeg_wrapper.util.FfmpegCommandUtil
 import com.floodin.ffmpeg_wrapper.util.FileUtil
 import com.floodin.ffmpeg_wrapper.util.MyLogs
@@ -63,28 +64,27 @@ class CompressVideoRepo(
         //ffmpeg -i input.mp4 -c:a copy -s hd720 output.mp4
         //ffmpeg -y -i /source-path/input.mp4 -s 480x320 -r 25 -vcodec mpeg4 -b:v 300k -b:a 48000 -ac 2 -ar 22050 /source/output.mp4
 
-        val currentMaxBitrate = if (resolution == VideoResolution.FHD) FHD_MAX_RATE else HD_MAX_RATE
-        val currentCrf = if (resolution == VideoResolution.FHD) FHD_CRF else HD_CRF
-        val widthHeight = resolution.value.split("x")
-        val width = if (isPortrait) {
-            widthHeight[1]
+        val currentMaxBitrate = if (resolution.isBetterThenHD()) FHD_MAX_RATE else HD_MAX_RATE
+        val currentCrf = if (resolution.isBetterThenHD()) FHD_CRF else HD_CRF
+        val compressedVideoWidth = if (isPortrait) {
+            resolution.height
         } else {
-            widthHeight[0]
+            resolution.width
         }
-        val height = if (isPortrait) {
-            widthHeight[0]
+        val compressedVideoHeight = if (isPortrait) {
+            resolution.width
         } else {
-            widthHeight[1]
+            resolution.height
         }
         MyLogs.LOG(
             "generateCommand",
             "generateCommand",
-            "widthHeight: $widthHeight width:$width height:$height currentMaxBitrate: $currentMaxBitrate currentCrf: $currentCrf"
+            "videoResolution: $resolution width:$compressedVideoWidth height:$compressedVideoHeight currentMaxBitrate: $currentMaxBitrate currentCrf: $currentCrf"
         )
         return if (duration != null) {
-            "-y -i '$inputPath' -f lavfi -i anullsrc -vf \"scale=w='if(gte(iw/ih,${width}/${height}),${width},-2)':h='if(gte(iw/ih,${width}/${height}),-2,${height})',setsar=1,setdar=a,pad=w=${width}:h=${height}:x=-1:y=-1\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast -t $duration $outputPath"
+            "-y -i '$inputPath' -f lavfi -i anullsrc -vf \"scale=w='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),${compressedVideoWidth},-2)':h='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),-2,${compressedVideoHeight})',setsar=1,setdar=a,pad=w=${compressedVideoWidth}:h=${compressedVideoHeight}:x=-1:y=-1\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast -t $duration $outputPath"
         } else {
-            "-y -i '$inputPath' -f lavfi -i anullsrc -vf \"scale=w='if(gte(iw/ih,${width}/${height}),${width},-2)':h='if(gte(iw/ih,${width}/${height}),-2,${height})',setsar=1,setdar=a,pad=w=${width}:h=${height}:x=-1:y=-1\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast $outputPath"
+            "-y -i '$inputPath' -f lavfi -i anullsrc -vf \"scale=w='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),${compressedVideoWidth},-2)':h='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),-2,${compressedVideoHeight})',setsar=1,setdar=a,pad=w=${compressedVideoWidth}:h=${compressedVideoHeight}:x=-1:y=-1\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast $outputPath"
         }
     }
 

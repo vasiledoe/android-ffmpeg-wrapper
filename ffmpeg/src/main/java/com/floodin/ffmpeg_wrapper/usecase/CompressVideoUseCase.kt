@@ -1,8 +1,6 @@
 package com.floodin.ffmpeg_wrapper.usecase
 
-import com.floodin.ffmpeg_wrapper.data.FFmpegResult
-import com.floodin.ffmpeg_wrapper.data.VideoInput
-import com.floodin.ffmpeg_wrapper.data.VideoResolution
+import com.floodin.ffmpeg_wrapper.data.*
 import com.floodin.ffmpeg_wrapper.repo.CalculateMaxDurationRepo
 import com.floodin.ffmpeg_wrapper.repo.CompressVideoRepo
 import com.floodin.ffmpeg_wrapper.repo.MediaInfoRepo
@@ -34,9 +32,11 @@ class CompressVideoUseCase(
         appName: String
     ): FFmpegResult {
         val isPortrait = mediaInfoRepo.isVideoInPortrait(inputVideo.absolutePath)
+        val inputVideoResolution = mediaInfoRepo.getVideoResolution(inputVideo.absolutePath)
+
         return compressVideoRepo.execute(
             inputVideo = inputVideo,
-            resolution = resolution,
+            resolution = resolution.orBetter(inputVideoResolution),
             duration = calculateMaxDurationRepo.execute(inputVideo, duration),
             isPortrait = isPortrait,
             appId = appId,

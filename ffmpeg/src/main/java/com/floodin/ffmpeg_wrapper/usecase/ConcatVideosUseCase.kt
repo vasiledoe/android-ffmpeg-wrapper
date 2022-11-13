@@ -1,9 +1,6 @@
 package com.floodin.ffmpeg_wrapper.usecase
 
-import com.floodin.ffmpeg_wrapper.data.AudioInput
-import com.floodin.ffmpeg_wrapper.data.FFmpegResult
-import com.floodin.ffmpeg_wrapper.data.VideoInput
-import com.floodin.ffmpeg_wrapper.data.VideoResolution
+import com.floodin.ffmpeg_wrapper.data.*
 import com.floodin.ffmpeg_wrapper.repo.CalculateMaxDurationRepo
 import com.floodin.ffmpeg_wrapper.repo.CompressVideoRepo
 import com.floodin.ffmpeg_wrapper.repo.ConcatVideosRepo

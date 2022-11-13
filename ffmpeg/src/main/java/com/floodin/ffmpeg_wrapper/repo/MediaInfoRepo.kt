@@ -3,6 +3,7 @@ package com.floodin.ffmpeg_wrapper.repo
 import com.arthenica.ffmpegkit.FFprobeKit
 import com.arthenica.ffmpegkit.StreamInformation
 import com.floodin.ffmpeg_wrapper.data.VideoMeta
+import com.floodin.ffmpeg_wrapper.data.VideoResolution
 import com.floodin.ffmpeg_wrapper.util.MyLogs
 import com.google.gson.Gson
 import kotlin.math.abs
@@ -16,11 +17,7 @@ class MediaInfoRepo {
     }
 
     fun isVideoInPortrait(inputPath: String): Boolean {
-        val mediaInformation = FFprobeKit.getMediaInformation(inputPath)
-        val videoStreamData = mediaInformation?.mediaInformation?.streams?.first {
-            it.type == "video"
-        }
-        return videoStreamData?.let { data ->
+        return getStreamInformation(inputPath)?.let { data ->
             val width = data.width
             val height = data.height
             val rotation = getDetectedVideoRotation(data)
@@ -37,6 +34,33 @@ class MediaInfoRepo {
                 "ERR failed to get resolution for inputPath:$inputPath"
             )
             false
+        }
+    }
+
+    fun getVideoResolution(inputPath: String): VideoResolution? {
+        return getStreamInformation(inputPath)?.let { data ->
+            val width = data.width.toInt()
+            val height = data.height.toInt()
+            MyLogs.LOG(
+                "MediaInfoRepo",
+                "getVideoResolution",
+                "inputPath:$inputPath width:$width height:$height"
+            )
+            VideoResolution(width, height)
+        } ?: run {
+            MyLogs.LOG(
+                "MediaInfoRepo",
+                "getVideoResolution",
+                "ERR failed to get resolution for inputPath:$inputPath"
+            )
+            null
+        }
+    }
+
+    private fun getStreamInformation(inputPath: String): StreamInformation? {
+        val mediaInformation = FFprobeKit.getMediaInformation(inputPath)
+        return mediaInformation?.mediaInformation?.streams?.firstOrNull {
+            it.type == "video"
         }
     }
 
