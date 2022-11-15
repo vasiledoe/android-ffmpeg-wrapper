@@ -16,6 +16,23 @@ fun VideoResolution.orBetter(otherResolution: VideoResolution?): VideoResolution
     }
 }
 
+fun VideoResolution.orWorse(otherResolution: VideoResolution?): VideoResolution {
+    otherResolution ?: return this
+    val isMinSmaller =
+        minOf(width, height) > minOf(otherResolution.width, otherResolution.height)
+    val isMaxSmaller =
+        maxOf(width, height) > maxOf(otherResolution.width, otherResolution.height)
+    return if (isMinSmaller && isMaxSmaller) {
+        otherResolution
+    } else {
+        this
+    }
+}
+
+fun VideoResolution?.isUndefined(): Boolean {
+    return this == null || height <= 0 || width <= 0
+}
+
 fun VideoResolution.isBetterThenHD(): Boolean {
     val min = minOf(height, width)
     return min > VideoQuality.HD.value

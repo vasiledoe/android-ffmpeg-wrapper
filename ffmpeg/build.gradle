@@ -10,8 +10,8 @@ android {
         minSdk 26
         targetSdk 33
 
-        versionCode 1028
-        versionName "1.0.28"
+        versionCode 1030
+        versionName "1.0.30"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
