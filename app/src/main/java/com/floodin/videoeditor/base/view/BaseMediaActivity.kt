@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
 import com.floodin.ffmpeg_wrapper.util.MyLogs
@@ -18,11 +19,11 @@ abstract class BaseMediaActivity : AppCompatActivity() {
      */
     protected abstract fun onStoragePermissionGranted()
 
-    protected fun hasStoragePermission() = hasPermissions(STORAGE_PERMISSIONS)
+    protected fun hasStoragePermission() = hasPermissions(getStoragePermissions())
 
     protected fun requestStoragePermission() {
         requestPermissions(
-            STORAGE_PERMISSIONS,
+            getStoragePermissions(),
             STORAGE_PERMISSIONS_REQUEST_CODE
         )
     }
@@ -68,12 +69,22 @@ abstract class BaseMediaActivity : AppCompatActivity() {
         }
     }
 
+    private fun getStoragePermissions(): Array<String> {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+                Manifest.permission.READ_MEDIA_AUDIO
+            )
+        } else {
+            arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+        }
+    }
 
     companion object {
-        val STORAGE_PERMISSIONS = arrayOf(
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
         const val STORAGE_PERMISSIONS_REQUEST_CODE = 10
     }
 }

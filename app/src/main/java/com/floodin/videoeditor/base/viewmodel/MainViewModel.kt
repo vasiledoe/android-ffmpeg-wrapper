@@ -113,7 +113,7 @@ open class MainViewModel(
                 appName = resUtil.getStringRes(R.string.app_name),
                 dirName = ConcatVideosRepo.AUDIO_TRACKS_DIR_NAME
             )
-            val trackAbsolutePath = externalDir.absolutePath + "/test.mp3"
+            val trackAbsolutePath = externalDir.absolutePath + "/music.mp3"
             val audioTrackFile = File(trackAbsolutePath)
             MyLogs.LOG(
                 "MainViewModel",
@@ -122,8 +122,8 @@ open class MainViewModel(
             )
             val audioInput = if (audioTrackFile.exists()) {
                 AudioInput(
-                    videoLevel = 80,
-                    trackLevel = 20,
+                    videoLevel = 50,
+                    trackLevel = 50,
                     trackAbsolutePath = audioTrackFile.absolutePath
                 )
             } else {
