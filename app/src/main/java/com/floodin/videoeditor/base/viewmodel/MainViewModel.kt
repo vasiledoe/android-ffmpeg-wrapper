@@ -5,8 +5,12 @@ import android.net.Uri
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.floodin.ffmpeg_wrapper.data.*
+import com.floodin.ffmpeg_wrapper.data.AudioInput
+import com.floodin.ffmpeg_wrapper.data.FFmpegResult
+import com.floodin.ffmpeg_wrapper.data.VideoInput
+import com.floodin.ffmpeg_wrapper.data.VideoResolution
 import com.floodin.ffmpeg_wrapper.repo.ConcatVideosRepo
+import com.floodin.ffmpeg_wrapper.repo.MediaInfoRepo
 import com.floodin.ffmpeg_wrapper.usecase.CompressVideoUseCase
 import com.floodin.ffmpeg_wrapper.usecase.ConcatVideosUseCase
 import com.floodin.ffmpeg_wrapper.util.FileUtil
@@ -28,7 +32,8 @@ open class MainViewModel(
     private val concatVideos: ConcatVideosUseCase,
     private val compressVideo: CompressVideoUseCase,
     private val resUtil: ResUtil,
-    private val fileUtil: FileUtil
+    private val fileUtil: FileUtil,
+    private val mediaInfoRepo: MediaInfoRepo
 ) : ViewModel(), KoinComponent {
 
     val successMsg = MutableLiveData<String>()
@@ -208,20 +213,24 @@ open class MainViewModel(
 
             when (result) {
                 is FFmpegResult.Success -> {
-                    val timeElapsed = (System.currentTimeMillis() - startTimeMillis).toPrettyTimeElapsed()
+                    val timeElapsed = (System.currentTimeMillis() - startTimeMillis)
                     val inputVideoMeta = inputVideos.first()
                     val inputVideoFile = File(inputVideoMeta.absolutePath)
                     val inputVideoFileSize = inputVideoFile.length().toPrettyFileSize()
 
                     val outputVideoFile = File(result.data.absolutePath)
                     val outputVideoFileSize = outputVideoFile.length().toPrettyFileSize()
+                    val videoStream = mediaInfoRepo.getVideoStreamInformation(
+                        inputPath = result.data.absolutePath
+                    )
 
                     MyLogs.LOG(
                         "MainViewModel",
                         "compressVideo",
-                        "results \n timeElapsed: $timeElapsed \n " +
+                        "results \n timeElapsed: ${timeElapsed.toPrettyTimeElapsed()} \n " +
                                 "input Video : ${inputVideoFile.absolutePath} $inputVideoFileSize \n " +
-                                "output Video : ${outputVideoFile.absolutePath}  $outputVideoFileSize"
+                                "output Video : ${outputVideoFile.absolutePath}  $outputVideoFileSize \n " +
+                                "videoStream has value : ${videoStream != null}"
                     )
 
                     val resultVideoMeta = result.data

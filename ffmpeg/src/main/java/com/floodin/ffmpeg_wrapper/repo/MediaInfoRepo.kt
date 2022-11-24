@@ -17,7 +17,7 @@ class MediaInfoRepo {
     }
 
     fun isVideoInPortrait(inputPath: String): Boolean {
-        return getStreamInformation(inputPath)?.let { data ->
+        return getVideoStreamInformation(inputPath)?.let { data ->
             val width = data.width
             val height = data.height
             val rotation = getDetectedVideoRotation(data)
@@ -38,7 +38,7 @@ class MediaInfoRepo {
     }
 
     fun getVideoResolution(inputPath: String): VideoResolution? {
-        return getStreamInformation(inputPath)?.let { data ->
+        return getVideoStreamInformation(inputPath)?.let { data ->
             val width = data.width.toInt()
             val height = data.height.toInt()
             MyLogs.LOG(
@@ -57,7 +57,7 @@ class MediaInfoRepo {
         }
     }
 
-    private fun getStreamInformation(inputPath: String): StreamInformation? {
+    fun getVideoStreamInformation(inputPath: String): StreamInformation? {
         val mediaInformation = FFprobeKit.getMediaInformation(inputPath)
         return mediaInformation?.mediaInformation?.streams?.firstOrNull {
             it.type == "video"
