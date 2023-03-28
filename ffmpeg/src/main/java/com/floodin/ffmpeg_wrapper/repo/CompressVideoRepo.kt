@@ -35,11 +35,19 @@ class CompressVideoRepo(
             COMPRESSED_DIR_NAME,
             "${System.currentTimeMillis()}.mp4"
         )
-        val command = generateCommand(
+//        val command = generateCommand(
+//            inputPath = inputVideo.absolutePath,
+//            outputPath = outputFile.absolutePath,
+//            format = format,
+//            duration = duration
+//        )
+        val command = generateCommandForSplitVideo(
             inputPath = inputVideo.absolutePath,
             outputPath = outputFile.absolutePath,
             format = format,
-            duration = duration
+            duration = duration!!,
+            targetDuration = 15,
+            clipDuration = 5
         )
         MyLogs.LOG("CompressVideoRepo", "compressVideo", "command: $command")
         return cmdUtil.executeSync(
@@ -73,6 +81,54 @@ class CompressVideoRepo(
         } else {
             "-y -i '$inputPath' -f lavfi -i anullsrc -vf \"scale=w='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),${widthHeight[0]},-2)':h='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),-2,${widthHeight[1]})',setsar=1,setdar=a,pad=w=${widthHeight[0]}:h=${widthHeight[1]}:x=-1:y=-1\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast $outputPath"
         }
+    }
+
+
+    private fun generateCommandForSplitVideo(
+        inputPath: String,
+        outputPath: String,
+        format: VideoFormat,
+        duration: Float,
+        targetDuration : Int,
+        clipDuration : Int
+    ): String {
+
+        val widthHeight = format.value.split("x")
+        val currentMaxBitrate = if (format == VideoFormat.FHD) FHD_MAX_RATE else HD_MAX_RATE
+        val currentCrf = if (format == VideoFormat.FHD) FHD_CRF else HD_CRF
+        MyLogs.LOG(
+            "generateCommandForSplitVideo",
+            "generateCommandForSplitVideo",
+            "widthHeight: $widthHeight currentMaxBitrate: $currentMaxBitrate currentCrf: $currentCrf"
+        )
+        // duration logic
+        val totalSections = (targetDuration/clipDuration).toInt()
+        val interval = (duration/totalSections).toInt();
+        val listOfTimestamps = ArrayList<Int>()
+        val offset = interval - ((interval - clipDuration)/2).toInt()
+        var intervalSum = interval;
+        while(intervalSum <= duration){
+            listOfTimestamps.add(intervalSum - offset)
+            intervalSum += interval
+        }
+
+        var videoTrimCommand = ""
+        var audioTrimCommand = ""
+        var videoOutputList = ""
+        var audioOutputList = ""
+        var count = 1
+        for(timestamp in listOfTimestamps){
+            val videoOutput = "[v${count}]"
+            val audioOutput = "[a${count}]"
+            videoTrimCommand += "[0:v]trim=start=${timestamp}:duration=${clipDuration},setpts=PTS-STARTPTS${videoOutput},"
+            audioTrimCommand += "[0:a]atrim=start=${timestamp}:duration=${clipDuration},asetpts=PTS-STARTPTS${audioOutput},"
+            videoOutputList += videoOutput
+            audioOutputList += audioOutput
+            count++
+        }
+        val ffmpegCommand = "-y -i '$inputPath' -f lavfi -i anullsrc -filter_complex \"${videoTrimCommand}${videoOutputList}concat=n=${listOfTimestamps.size}:v=1:a=0,scale=w='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),${widthHeight[0]},-2)':h='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),-2,${widthHeight[1]})',setsar=1,setdar=a,pad=w=${widthHeight[0]}:h=${widthHeight[1]}:x=-1:y=-1[ov]\" -filter_complex \"${audioTrimCommand}${audioOutputList}concat=n=${listOfTimestamps.size}:v=0:a=1[oa]\" -map \"[ov]\" -map \"[oa]\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast $outputPath"
+        println(ffmpegCommand)
+        return ffmpegCommand
     }
 
 
