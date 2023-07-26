@@ -3,6 +3,8 @@ package com.floodin.ffmpeg_wrapper.usecase
 import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import com.floodin.ffmpeg_wrapper.data.VideoInput
 import com.floodin.ffmpeg_wrapper.data.VideoResolution
+import com.floodin.ffmpeg_wrapper.data.VideoSplittingMeta
+import com.floodin.ffmpeg_wrapper.data.toOrientation
 import com.floodin.ffmpeg_wrapper.repo.CalculateMaxDurationRepo
 import com.floodin.ffmpeg_wrapper.repo.CompressVideoRepo
 import com.floodin.ffmpeg_wrapper.repo.MediaInfoRepo
@@ -30,15 +32,18 @@ class CompressVideoUseCase(
         inputVideo: VideoInput,
         resolution: VideoResolution,
         duration: Float = DEF_MAX_COMPRESS_OUTPUT_VIDEO_DURATION.toFloat(),
+        splittingMeta: VideoSplittingMeta? = null,
         appId: String,
         appName: String
     ): FFmpegResult {
-        val isPortrait = mediaInfoRepo.isVideoInPortrait(inputVideo.absolutePath)
+        val rotationMeta = mediaInfoRepo.getVideoRotationMeta(inputVideo.absolutePath)
+        val orientationMeta = rotationMeta.toOrientation()
         return compressVideoRepo.execute(
             inputVideo = inputVideo,
             resolution = resolution,
-            duration = calculateMaxDurationRepo.execute(inputVideo, duration),
-            isPortrait = isPortrait,
+            orientation = orientationMeta,
+            duration = calculateMaxDurationRepo.execute(inputVideo, duration)?.targetDuration,
+            splittingMeta = splittingMeta,
             appId = appId,
             appName = appName
         )
@@ -61,11 +66,12 @@ class CompressVideoUseCase(
     ): List<FFmpegResult> = withContext(Dispatchers.IO) {
         val compressedVideoTasks = inputVideos.map { inputVideo ->
             async {
-                val isPortrait = mediaInfoRepo.isVideoInPortrait(inputVideo.absolutePath)
+                val rotationMeta = mediaInfoRepo.getVideoRotationMeta(inputVideo.absolutePath)
+                val orientationMeta = rotationMeta.toOrientation()
                 compressVideoRepo.execute(
                     inputVideo = inputVideo,
                     resolution = resolution,
-                    isPortrait = isPortrait,
+                    orientation = orientationMeta,
                     appId = appId,
                     appName = appName
                 )
