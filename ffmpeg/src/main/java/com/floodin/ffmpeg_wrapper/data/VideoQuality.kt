@@ -5,6 +5,11 @@ data class VideoResolution(
     val height: Int
 )
 
+enum class VideoQuality(val value: Int) {
+    HD(720),
+    FHD(1080)
+}
+
 fun VideoResolution.orBetter(otherResolution: VideoResolution?): VideoResolution {
     otherResolution ?: return this
     val isMinBigger = minOf(width, height) < minOf(otherResolution.width, otherResolution.height)
@@ -33,12 +38,23 @@ fun VideoResolution?.isUndefined(): Boolean {
     return this == null || height <= 0 || width <= 0
 }
 
-fun VideoResolution.isBetterThenHD(): Boolean {
+fun VideoResolution.isBetterThanHD(): Boolean {
     val min = minOf(height, width)
     return min > VideoQuality.HD.value
 }
 
-enum class VideoQuality(val value: Int) {
-    HD(720),
-    FHD(1080)
+fun VideoResolution.toCompressedWidth(orientation: VideoOrientationMeta?): Int {
+    return if (orientation?.isVertical() == true) {
+        height
+    } else {
+        width
+    }
+}
+
+fun VideoResolution.toCompressedHeight(orientation: VideoOrientationMeta?): Int {
+    return if (orientation?.isVertical() == true) {
+        width
+    } else {
+        height
+    }
 }

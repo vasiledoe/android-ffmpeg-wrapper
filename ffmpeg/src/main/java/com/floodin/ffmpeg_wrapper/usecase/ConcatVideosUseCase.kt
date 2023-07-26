@@ -1,6 +1,11 @@
 package com.floodin.ffmpeg_wrapper.usecase
 
-import com.floodin.ffmpeg_wrapper.data.*
+import com.floodin.ffmpeg_wrapper.data.AudioInput
+import com.floodin.ffmpeg_wrapper.data.FFmpegResult
+import com.floodin.ffmpeg_wrapper.data.VideoInput
+import com.floodin.ffmpeg_wrapper.data.VideoResolution
+import com.floodin.ffmpeg_wrapper.data.VideoSplittingMeta
+import com.floodin.ffmpeg_wrapper.data.toOrientation
 import com.floodin.ffmpeg_wrapper.repo.CalculateMaxDurationRepo
 import com.floodin.ffmpeg_wrapper.repo.CompressVideoRepo
 import com.floodin.ffmpeg_wrapper.repo.ConcatVideosRepo
@@ -34,15 +39,21 @@ class ConcatVideosUseCase(
         appName: String
     ): FFmpegResult {
         val videoInputsWithMaxDuration = calculateMaxDurationRepo.execute(inputVideos, duration)
-        val isPortrait = mediaInfoRepo.isVideoInPortrait(inputVideos.first().absolutePath)
-        MyLogs.LOG("ConcatVideosUseCase", "executeSync", "isPortrait:$isPortrait")
+        val rotationMeta = mediaInfoRepo.getVideoRotationMeta(inputVideos.first().absolutePath)
+        val orientationMeta = rotationMeta.toOrientation()
+        MyLogs.LOG(
+            "ConcatVideosUseCase",
+            "executeSync",
+            "orientationMeta:$orientationMeta"
+        )
 
-        val compressVireoResults = videoInputsWithMaxDuration.map {
+        val compressVireoResults = videoInputsWithMaxDuration.map { item ->
             val result = compressVideoRepo.execute(
-                inputVideo = it.key,
+                inputVideo = item.inputVideo,
                 resolution = resolution,
-                duration = it.value,
-                isPortrait = isPortrait,
+                duration = item.targetDuration,
+                splittingMeta = VideoSplittingMeta(inputDuration = item.inputDuration),
+                orientation = orientationMeta,
                 appId = appId,
                 appName = appName
             )

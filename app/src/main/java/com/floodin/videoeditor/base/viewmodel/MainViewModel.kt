@@ -139,7 +139,7 @@ open class MainViewModel(
                 inputVideos = inputVideos,
                 inputAudio = audioInput,
                 resolution = VideoResolution(1280, 720),
-//                duration = 60f,
+                duration = 50f,
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
             )
@@ -158,11 +158,13 @@ open class MainViewModel(
                         selectedVideoItems.value = updatedList
                     }
                 }
+
                 is FFmpegResult.Error -> {
                     viewModelScope.launch(Dispatchers.Main) {
                         publishError(result.message)
                     }
                 }
+
                 is FFmpegResult.Cancel -> {
                     publishError("Concat seems cancelled")
                 }
@@ -206,7 +208,8 @@ open class MainViewModel(
             val result = compressVideo.executeSync(
                 inputVideo = inputVideos.first(),
                 resolution = VideoResolution(1280, 720),
-//                duration = 30f,
+                duration = 25f,
+//                splittingMeta = VideoSplittingMeta(inputDuration = item.inputDuration),
                 appId = BuildConfig.APPLICATION_ID,
                 appName = resUtil.getStringRes(R.string.app_name)
             )
@@ -244,11 +247,13 @@ open class MainViewModel(
                         selectedVideoItems.value = updatedList
                     }
                 }
+
                 is FFmpegResult.Error -> {
                     viewModelScope.launch(Dispatchers.Main) {
                         publishError(result.message)
                     }
                 }
+
                 is FFmpegResult.Cancel -> {
                     publishError("Compress seems cancelled")
                 }

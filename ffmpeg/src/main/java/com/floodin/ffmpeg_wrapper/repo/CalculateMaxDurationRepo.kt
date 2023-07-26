@@ -1,79 +1,83 @@
 package com.floodin.ffmpeg_wrapper.repo
 
 import com.floodin.ffmpeg_wrapper.data.VideoInput
+import com.floodin.ffmpeg_wrapper.data.VideoInputWithMaxDuration
 import com.floodin.ffmpeg_wrapper.util.MyLogs
+import kotlin.math.min
 
 class CalculateMaxDurationRepo(
     private val mediaInfoRepo: MediaInfoRepo
 ) {
 
     /**
-     * Determine max seconds from each video
+     * Determine max seconds
      *
-     * @param inputVideos - input video file metas
-     * @param maxDuration - final video duration cannot exceed this limit
-     * @return map<absolute path, amount of seconds>
+     * @param inputVideo - input video file meta
+     * @param maxDuration - target video duration cannot exceed this limit
+     * @return video input item with original and target duration or null in case we cannot get input duration
      */
     fun execute(
-        inputVideos: List<VideoInput>,
+        inputVideo: VideoInput,
         maxDuration: Float
-    ): Map<VideoInput, Float> {
-        val inputDurationMeta = mutableMapOf<VideoInput, Float>()
-        inputVideos.forEach { videoInput ->
-            inputDurationMeta[videoInput] = mediaInfoRepo.videoDuration(videoInput.absolutePath)
+    ): VideoInputWithMaxDuration? {
+        val inputDuration = mediaInfoRepo.getVideoDuration(inputVideo.absolutePath)
+        return if (inputDuration > 0) {
+            VideoInputWithMaxDuration(
+                inputVideo = inputVideo,
+                inputDuration = inputDuration,
+                targetDuration = min(inputDuration, maxDuration)
+            )
+        } else {
+            MyLogs.LOG(
+                "CalculateMaxDurationRepo",
+                "execute",
+                "failed to get video duration - return null so we'll have no duration limitation for compression"
+            )
+            null
         }
-        MyLogs.LOG("CalculateMaxDurationRepo", "execute", "inputDurationMeta: $inputDurationMeta")
-        val anyVideoMaxDuration = maxVideoDuration(inputDurationMeta, maxDuration)
-        val inputDurationWithDurationMeta = mutableMapOf<VideoInput, Float>()
-        inputDurationMeta.forEach { (videoInput, originalDuration) ->
-            if (originalDuration <= anyVideoMaxDuration) {
-                inputDurationWithDurationMeta[videoInput] = originalDuration
-            } else {
-                inputDurationWithDurationMeta[videoInput] = anyVideoMaxDuration
-            }
-        }
-        MyLogs.LOG(
-            "CalculateMaxDurationRepo",
-            "execute",
-            "inputDurationWithDurationMeta: $inputDurationWithDurationMeta"
-        )
-        return inputDurationWithDurationMeta
     }
 
     /**
      * Determine max seconds from each video
      *
-     * @param inputVideo - input video file metas
+     * @param inputVideos - input video file metas
      * @param maxDuration - final video duration cannot exceed this limit
-     * @return map<absolute path, amount of seconds>
+     * @return list of video input items with original and target durations ONLY for videos that has input duration
      */
     fun execute(
-        inputVideo: VideoInput,
+        inputVideos: List<VideoInput>,
         maxDuration: Float
-    ): Float? {
-        val inputDuration = mediaInfoRepo.videoDuration(inputVideo.absolutePath)
-        return if (inputDuration == 0f) {
-            MyLogs.LOG(
-                "CalculateMaxDurationRepo",
-                "execute",
-                "failed to get video duration - return null"
-            )
-            return null
-        } else if (inputDuration > maxDuration) {
-            MyLogs.LOG(
-                "CalculateMaxDurationRepo",
-                "execute",
-                "inputDuration is too big, return maxDuration: $maxDuration"
-            )
-            maxDuration
-        } else {
-            MyLogs.LOG(
-                "CalculateMaxDurationRepo",
-                "execute",
-                "inputDuration is shorter, return inputDuration: $inputDuration"
-            )
-            inputDuration
+    ): List<VideoInputWithMaxDuration> {
+        val inputDurationMeta = mutableMapOf<VideoInput, Float>()
+        inputVideos.forEach { videoInput ->
+            inputDurationMeta[videoInput] = mediaInfoRepo.getVideoDuration(videoInput.absolutePath)
         }
+        MyLogs.LOG("CalculateMaxDurationRepo", "execute", "inputDurationMeta: $inputDurationMeta")
+        val list = mutableListOf<VideoInputWithMaxDuration>()
+        val anyVideoMaxDuration = maxVideoDuration(inputDurationMeta, maxDuration)
+        inputDurationMeta.forEach { (videoInput, inputDuration) ->
+            if (inputDuration > 0) {
+                list.add(
+                    VideoInputWithMaxDuration(
+                        inputVideo = videoInput,
+                        inputDuration = inputDuration,
+                        targetDuration = min(inputDuration, anyVideoMaxDuration)
+                    )
+                )
+            } else {
+                MyLogs.LOG(
+                    "CalculateMaxDurationRepo",
+                    "execute",
+                    "Failed to get video duration - ignore this video:$videoInput"
+                )
+            }
+        }
+        MyLogs.LOG(
+            "CalculateMaxDurationRepo",
+            "execute",
+            "list: $list"
+        )
+        return list
     }
 
     private fun maxVideoDuration(

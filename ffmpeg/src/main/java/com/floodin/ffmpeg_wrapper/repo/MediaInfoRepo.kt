@@ -1,40 +1,82 @@
 package com.floodin.ffmpeg_wrapper.repo
 
+import android.media.MediaMetadataRetriever
 import com.arthenica.ffmpegkit.FFprobeKit
 import com.arthenica.ffmpegkit.StreamInformation
+import com.floodin.ffmpeg_wrapper.data.VideoRotationMeta
 import com.floodin.ffmpeg_wrapper.data.VideoMeta
 import com.floodin.ffmpeg_wrapper.data.VideoResolution
+import com.floodin.ffmpeg_wrapper.data.isVerticalByRotation
 import com.floodin.ffmpeg_wrapper.util.MyLogs
 import com.google.gson.Gson
 import kotlin.math.abs
 
+
 class MediaInfoRepo {
-    fun videoDuration(inputPath: String): Float {
+
+    fun getVideoDuration(inputPath: String): Float {
         val mediaInformation = FFprobeKit.getMediaInformation(inputPath)
         val duration = mediaInformation?.mediaInformation?.duration?.toFloat()
-        MyLogs.LOG("MediaInfoRepo", "videoDuration", "inputPath:$inputPath duration:$duration")
+        MyLogs.LOG("MediaInfoRepo", "getVideoDuration", "inputPath:$inputPath duration:$duration")
         return duration ?: 0f
+    }
+
+    fun getVideoRotationMeta(inputPath: String): VideoRotationMeta {
+        return getVideoStreamInformation(inputPath)?.let { data ->
+            val width = data.width
+            val height = data.height
+//            val rotation = getVideoRotation(data)
+            val mediaRotation = getMediaMetaRotation(inputPath)
+            val meta = VideoRotationMeta(
+                rotation = mediaRotation,
+                isVerticalByRotation = mediaRotation.isVerticalByRotation(),
+                isHeightBiggerThenWidth = height > width
+            )
+            MyLogs.LOG(
+                "MediaInfoRepo",
+                "getVideoRotationMeta",
+                "inputPath:$inputPath resolution:$width x $height mediaRotation:$mediaRotation meta:$meta"
+            )
+            meta
+        } ?: run {
+            MyLogs.LOG(
+                "MediaInfoRepo",
+                "getVideoRotationMeta",
+                "ERR failed to get metadata for inputPath:$inputPath"
+            )
+            VideoRotationMeta(
+                rotation = 0,
+                isVerticalByRotation = false,
+                isHeightBiggerThenWidth = false
+            )
+        }
     }
 
     fun isVideoInPortrait(inputPath: String): Boolean {
         return getVideoStreamInformation(inputPath)?.let { data ->
             val width = data.width
             val height = data.height
-            val rotation = getDetectedVideoRotation(data)
+            val rotation = getVideoRotation(data)
             MyLogs.LOG(
                 "MediaInfoRepo",
                 "isVideoInPortrait",
                 "inputPath:$inputPath width:$width height:$height rotation:$rotation"
             )
-            (height > width) || abs(rotation) > 0
+            (height > width) || abs(rotation) == 90
         } ?: run {
             MyLogs.LOG(
                 "MediaInfoRepo",
                 "isVideoInPortrait",
-                "ERR failed to get resolution for inputPath:$inputPath"
+                "ERR failed to get metadata for inputPath:$inputPath"
             )
             false
         }
+    }
+
+    fun getVideoRotation(inputPath: String): Int {
+        return getVideoStreamInformation(inputPath)?.let { data ->
+            getVideoRotation(data)
+        } ?: 0
     }
 
     fun getVideoResolution(inputPath: String): VideoResolution? {
@@ -51,7 +93,7 @@ class MediaInfoRepo {
             MyLogs.LOG(
                 "MediaInfoRepo",
                 "getVideoResolution",
-                "ERR failed to get resolution for inputPath:$inputPath"
+                "ERR failed to get metadata for inputPath:$inputPath"
             )
             null
         }
@@ -64,7 +106,7 @@ class MediaInfoRepo {
         }
     }
 
-    private fun getDetectedVideoRotation(data: StreamInformation): Int {
+    private fun getVideoRotation(data: StreamInformation): Int {
         val sideDataJson: String? = data.getStringProperty("side_data_list")?.toString()
         sideDataJson ?: return 0
         val sideData: VideoMeta? = Gson().fromJson(
@@ -72,5 +114,12 @@ class MediaInfoRepo {
             Array<VideoMeta>::class.java
         )?.firstOrNull()
         return sideData?.rotation ?: 0
+    }
+
+    private fun getMediaMetaRotation(path: String): Int {
+        val m = MediaMetadataRetriever()
+        m.setDataSource(path)
+        val rotationMeta = m.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
+        return rotationMeta?.toIntOrNull() ?: 0
     }
 }
