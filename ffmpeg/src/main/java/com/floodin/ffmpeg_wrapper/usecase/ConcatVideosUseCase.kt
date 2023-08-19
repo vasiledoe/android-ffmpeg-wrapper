@@ -51,9 +51,9 @@ class ConcatVideosUseCase(
             val result = compressVideoRepo.execute(
                 inputVideo = item.inputVideo,
                 resolution = resolution,
+                orientation = orientationMeta,
                 duration = item.targetDuration,
                 splittingMeta = VideoSplittingMeta(inputDuration = item.inputDuration),
-                orientation = orientationMeta,
                 appId = appId,
                 appName = appName
             )
