@@ -127,8 +127,8 @@ open class MainViewModel(
             )
             val audioInput = if (audioTrackFile.exists()) {
                 AudioInput(
-                    videoLevel = 50,
-                    trackLevel = 50,
+                    videoLevel = 100,
+                    trackLevel = 20,
                     trackAbsolutePath = audioTrackFile.absolutePath
                 )
             } else {
