@@ -10,8 +10,8 @@ enum class RotationTransformation(val value: String) {
 fun Int.toRotationTransposeCmd(): String {
     return when (this) {
         90 -> RotationTransformation.ROTATION_90.value
-        -90 -> RotationTransformation.ROTATION_MINUS_90.value
-        180, -180 -> RotationTransformation.ROTATION_180.value
+        180 -> RotationTransformation.ROTATION_180.value
+        270 -> RotationTransformation.ROTATION_MINUS_90.value
         else -> RotationTransformation.NO_ROTATION.value
     }
 }

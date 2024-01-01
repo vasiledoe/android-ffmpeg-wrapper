@@ -43,7 +43,7 @@ fun VideoResolution.isBetterThanHD(): Boolean {
     return min > VideoQuality.HD.value
 }
 
-fun VideoResolution.toCompressedWidth(orientation: VideoOrientationMeta?): Int {
+fun VideoResolution.toCompressedWidth(orientation: VideoOrientation?): Int {
     return if (orientation?.isVertical() == true) {
         height
     } else {
@@ -51,7 +51,7 @@ fun VideoResolution.toCompressedWidth(orientation: VideoOrientationMeta?): Int {
     }
 }
 
-fun VideoResolution.toCompressedHeight(orientation: VideoOrientationMeta?): Int {
+fun VideoResolution.toCompressedHeight(orientation: VideoOrientation?): Int {
     return if (orientation?.isVertical() == true) {
         width
     } else {

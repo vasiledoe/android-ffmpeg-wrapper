@@ -97,8 +97,10 @@ open class MainViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val inputVideos = selectedVideoItems.value?.mapIndexed { index, videoItem ->
                 VideoInput(
-                    "videoId:$index",
-                    videoItem.path
+                    id = "videoId:$index",
+                    absolutePath = videoItem.path,
+                    orientation = mediaInfoRepo.getVideoOrientation(videoItem.path),
+                    userRotationDegrees = 0
                 )
             }
             MyLogs.LOG("MainViewModel", "concatVideosSync", "inputVideos:${inputVideos?.size}")
@@ -177,7 +179,8 @@ open class MainViewModel(
             val inputVideos = selectedVideoItems.value?.mapIndexed { index, videoItem ->
                 VideoInput(
                     "videoId:$index",
-                    videoItem.path
+                    videoItem.path,
+                    orientation = mediaInfoRepo.getVideoOrientation(videoItem.path)
                 )
             }
             MyLogs.LOG(

@@ -3,10 +3,10 @@ package com.floodin.ffmpeg_wrapper.repo
 import android.media.MediaMetadataRetriever
 import com.arthenica.ffmpegkit.FFprobeKit
 import com.arthenica.ffmpegkit.StreamInformation
-import com.floodin.ffmpeg_wrapper.data.VideoRotationMeta
 import com.floodin.ffmpeg_wrapper.data.VideoMeta
 import com.floodin.ffmpeg_wrapper.data.VideoResolution
-import com.floodin.ffmpeg_wrapper.data.isVerticalByRotation
+import com.floodin.ffmpeg_wrapper.data.VideoRotation
+import com.floodin.ffmpeg_wrapper.data.toOrientation
 import com.floodin.ffmpeg_wrapper.util.MyLogs
 import com.google.gson.Gson
 import kotlin.math.abs
@@ -21,15 +21,16 @@ class MediaInfoRepo {
         return duration ?: 0f
     }
 
-    fun getVideoRotationMeta(inputPath: String): VideoRotationMeta {
+    fun getVideoOrientation(inputPath: String) = getVideoRotationMeta(inputPath).toOrientation()
+
+    fun getVideoRotationMeta(inputPath: String): VideoRotation {
         return getVideoStreamInformation(inputPath)?.let { data ->
             val width = data.width
             val height = data.height
 //            val rotation = getVideoRotation(data)
             val mediaRotation = getMediaMetaRotation(inputPath)
-            val meta = VideoRotationMeta(
-                rotation = mediaRotation,
-                isVerticalByRotation = mediaRotation.isVerticalByRotation(),
+            val meta = VideoRotation(
+                degrees = mediaRotation,
                 isHeightBiggerThenWidth = height > width
             )
             MyLogs.LOG(
@@ -44,9 +45,8 @@ class MediaInfoRepo {
                 "getVideoRotationMeta",
                 "ERR failed to get metadata for inputPath:$inputPath"
             )
-            VideoRotationMeta(
-                rotation = 0,
-                isVerticalByRotation = false,
+            VideoRotation(
+                degrees = 0,
                 isHeightBiggerThenWidth = false
             )
         }

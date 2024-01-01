@@ -4,10 +4,8 @@ import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import com.floodin.ffmpeg_wrapper.data.VideoInput
 import com.floodin.ffmpeg_wrapper.data.VideoResolution
 import com.floodin.ffmpeg_wrapper.data.VideoSplittingMeta
-import com.floodin.ffmpeg_wrapper.data.toOrientation
 import com.floodin.ffmpeg_wrapper.repo.CalculateMaxDurationRepo
 import com.floodin.ffmpeg_wrapper.repo.CompressVideoRepo
-import com.floodin.ffmpeg_wrapper.repo.MediaInfoRepo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -15,8 +13,7 @@ import kotlinx.coroutines.withContext
 
 class CompressVideoUseCase(
     private val calculateMaxDurationRepo: CalculateMaxDurationRepo,
-    private val compressVideoRepo: CompressVideoRepo,
-    private val mediaInfoRepo: MediaInfoRepo
+    private val compressVideoRepo: CompressVideoRepo
 ) {
 
     /**
@@ -36,12 +33,9 @@ class CompressVideoUseCase(
         appId: String,
         appName: String
     ): FFmpegResult {
-        val rotationMeta = mediaInfoRepo.getVideoRotationMeta(inputVideo.absolutePath)
-        val orientationMeta = rotationMeta.toOrientation()
         return compressVideoRepo.execute(
             inputVideo = inputVideo,
             resolution = resolution,
-            orientation = orientationMeta,
             duration = calculateMaxDurationRepo.execute(inputVideo, duration)?.targetDuration,
             splittingMeta = splittingMeta,
             appId = appId,
@@ -66,12 +60,9 @@ class CompressVideoUseCase(
     ): List<FFmpegResult> = withContext(Dispatchers.IO) {
         val compressedVideoTasks = inputVideos.map { inputVideo ->
             async {
-                val rotationMeta = mediaInfoRepo.getVideoRotationMeta(inputVideo.absolutePath)
-                val orientationMeta = rotationMeta.toOrientation()
                 compressVideoRepo.execute(
                     inputVideo = inputVideo,
                     resolution = resolution,
-                    orientation = orientationMeta,
                     appId = appId,
                     appName = appName
                 )
