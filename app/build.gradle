@@ -10,8 +10,8 @@ android {
         minSdk 26
         targetSdk 34
 
-        versionCode 1040
-        versionName "1.0.40"
+        versionCode 1041
+        versionName "1.0.41"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -47,6 +47,9 @@ dependencies {
     implementation 'com.google.android.material:material:1.7.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'com.squareup.picasso:picasso:2.71828'
+
+    // Ffmpeg kit
+    implementation(files('../global-libs/ffmpeg-kit-min-gpl-6.0.aar'))
 
     // DI
     implementation "io.insert-koin:koin-android:3.1.2"

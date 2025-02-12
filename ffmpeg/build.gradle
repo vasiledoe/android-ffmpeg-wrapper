@@ -9,8 +9,8 @@ android {
         minSdk 26
         targetSdk 34
 
-        versionCode 1040
-        versionName "1.0.40"
+        versionCode 1041
+        versionName "1.0.41"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -42,10 +42,16 @@ dependencies {
     // File
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
 
-    // Ffmpeg - use local .aar and .jar files because they want to remove remote binaries
+    // Ffmpeg
+    // cannot use remote binary because they will remove it after April 2025
     //api 'com.arthenica:ffmpeg-kit-min-gpl:6.0'
-    api(files('libs/ffmpeg-kit-min-gpl-6.0.aar'))
+    // cannot use local /libs folder to store the binary because Jitpack cannot generate the lib
+    //api(files('libs/ffmpeg-kit-min-gpl-6.0.aar'))
+    // use it from the project root /global-libs folder instead
+    compileOnly(files('../global-libs/ffmpeg-kit-min-gpl-6.0.aar'))
+    // the .aar cannot keep dependencies to this so we need to have it declared too
     //implementation 'com.arthenica:smart-exception-java:0.2.1'
+    // but use local jars instead of remote ones - just in case they decide to remove them
     implementation(files('libs/smart-exception-java-0.2.1.jar'))
     implementation(files('libs/smart-exception-common-0.2.1.jar'))
 
