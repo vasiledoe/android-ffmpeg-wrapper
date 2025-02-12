@@ -6,12 +6,12 @@ plugins {
 android {
     defaultConfig {
         applicationId "com.floodin.videoeditor"
-        compileSdk 33
+        compileSdk 34
         minSdk 26
-        targetSdk 33
+        targetSdk 34
 
-        versionCode 1039
-        versionName "1.0.39"
+        versionCode 1040
+        versionName "1.0.40"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -5,12 +5,12 @@ plugins {
 
 android {
     defaultConfig {
-        compileSdk 33
+        compileSdk 34
         minSdk 26
-        targetSdk 33
+        targetSdk 34
 
-        versionCode 1039
-        versionName "1.0.39"
+        versionCode 1040
+        versionName "1.0.40"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -41,7 +41,13 @@ dependencies {
 
     // File
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
-    api 'com.arthenica:ffmpeg-kit-min-gpl:4.5.1-1'
+
+    // Ffmpeg - use local .aar and .jar files because they want to remove remote binaries
+    //api 'com.arthenica:ffmpeg-kit-min-gpl:6.0'
+    api(files('libs/ffmpeg-kit-min-gpl-6.0.aar'))
+    //implementation 'com.arthenica:smart-exception-java:0.2.1'
+    implementation(files('libs/smart-exception-java-0.2.1.jar'))
+    implementation(files('libs/smart-exception-common-0.2.1.jar'))
 
     // DI
     implementation "io.insert-koin:koin-android:3.1.2"
