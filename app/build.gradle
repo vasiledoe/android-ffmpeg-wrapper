@@ -4,14 +4,16 @@ plugins {
 }
 
 android {
+    namespace "com.floodin.videoeditor"
+    compileSdk 35
+
     defaultConfig {
         applicationId "com.floodin.videoeditor"
-        compileSdk 34
         minSdk 26
-        targetSdk 34
+        targetSdk 35
 
-        versionCode 1041
-        versionName "1.0.41"
+        versionCode 1050
+        versionName "1.0.50"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -29,8 +31,14 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
-    dataBinding {
-        enabled true
+    buildFeatures {
+        buildConfig true
+        dataBinding true
+    }
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 }
 
@@ -49,7 +57,7 @@ dependencies {
     implementation 'com.squareup.picasso:picasso:2.71828'
 
     // Ffmpeg kit
-    implementation(files('../global-libs/ffmpeg-kit-min-gpl-6.0.aar'))
+    implementation(files('../global-libs/ffmpeg-kit-lts-ndk-r25-16k.aar'))
 
     // DI
     implementation "io.insert-koin:koin-android:3.1.2"

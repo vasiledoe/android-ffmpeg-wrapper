@@ -4,13 +4,15 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        compileSdk 34
-        minSdk 26
-        targetSdk 34
+    namespace "com.floodin.ffmpeg_wrapper"
+    compileSdk 35
 
-        versionCode 1041
-        versionName "1.0.41"
+    defaultConfig {
+        minSdk 26
+        targetSdk 35
+
+        versionCode 1050
+        versionName "1.0.50"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -28,6 +30,11 @@ android {
     }
     kotlinOptions {
         jvmTarget = '1.8'
+    }
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 }
 
@@ -48,7 +55,7 @@ dependencies {
     // cannot use local /libs folder to store the binary because Jitpack cannot generate the lib
     //api(files('libs/ffmpeg-kit-min-gpl-6.0.aar'))
     // use it from the project root /global-libs folder instead
-    compileOnly(files('../global-libs/ffmpeg-kit-min-gpl-6.0.aar'))
+    compileOnly(files('../global-libs/ffmpeg-kit-lts-ndk-r25-16k.aar'))
     // the .aar cannot keep dependencies to this so we need to have it declared too
     //implementation 'com.arthenica:smart-exception-java:0.2.1'
     // but use local jars instead of remote ones - just in case they decide to remove them

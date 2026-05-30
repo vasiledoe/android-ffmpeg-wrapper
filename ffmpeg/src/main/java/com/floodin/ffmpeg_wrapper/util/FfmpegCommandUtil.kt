@@ -14,11 +14,12 @@ class FfmpegCommandUtil(
 ) {
     fun executeSync(
         inputFileId: String,
-        command: String,
+        command: Array<String>,
         outputFile: File,
         appId: String
     ): FFmpegResult {
-        val session = FFmpegKit.execute(command)
+        val session = FFmpegKit.executeWithArguments(command)
+
         if (ReturnCode.isSuccess(session.returnCode)) {
             MyLogs.LOG(
                 "FfmpegCommandUtil",

@@ -5,7 +5,12 @@ import com.floodin.ffmpeg_wrapper.data.FFmpegResult
 import com.floodin.ffmpeg_wrapper.util.FfmpegCommandUtil
 import com.floodin.ffmpeg_wrapper.util.FileUtil
 import com.floodin.ffmpeg_wrapper.util.MyLogs
-import java.io.*
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.OutputStreamWriter
+import java.io.Writer
 
 class ConcatVideosRepo(
     private val fileUtil: FileUtil,
@@ -57,12 +62,31 @@ class ConcatVideosRepo(
         audioInput: AudioInput?,
         videoOutputFilePath: String,
         appName: String
-    ): String {
+    ): Array<String> {
         val filePath = generateListFilePaths(videoInputFilePaths, appName)
         return if (audioInput != null) {
-            "-f concat -safe 0 -i '$filePath' -stream_loop -1 -i '${audioInput.trackAbsolutePath}' -filter_complex \"[0:a]volume=${audioInput.videoLevel}/100[aorg];[1:a]volume=${audioInput.trackLevel}/100[atrk];[aorg][atrk]amix=inputs=2:duration=shortest[aout]\" -map 0:v -map \"[aout]\" -c:v copy -c:a aac '$videoOutputFilePath'"
+            val filterComplex = "[0:a]volume=${audioInput.videoLevel}/100[aorg];[1:a]volume=${audioInput.trackLevel}/100[atrk];[aorg][atrk]amix=inputs=2:duration=shortest[aout]"
+            arrayOf(
+                "-f", "concat",
+                "-safe", "0",
+                "-i", filePath,
+                "-stream_loop", "-1",
+                "-i", audioInput.trackAbsolutePath,
+                "-filter_complex", filterComplex,
+                "-map", "0:v",
+                "-map", "[aout]",
+                "-c:v", "copy",
+                "-c:a", "aac",
+                videoOutputFilePath
+            )
         } else {
-            "-f concat -safe 0 -i '$filePath' -c copy '$videoOutputFilePath'"
+            arrayOf(
+                "-f", "concat",
+                "-safe", "0",
+                "-i", filePath,
+                "-c", "copy",
+                videoOutputFilePath
+            )
         }
     }
 

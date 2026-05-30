@@ -94,9 +94,8 @@ class CompressVideoRepo(
         orientation: VideoOrientation,
         userRotationDegrees: Int,
         duration: Float?,
-    ): String {
-        val currentMaxBitrate = if (resolution.isBetterThanHD()) FHD_MAX_RATE else HD_MAX_RATE
-        val currentCrf = if (resolution.isBetterThanHD()) FHD_CRF else HD_CRF
+    ): Array<String> {
+        val videoBitrate = if (resolution.isBetterThanHD()) FHD_VIDEO_BITRATE else HD_VIDEO_BITRATE
 
         val rotationTransposeCmd = userRotationDegrees.toRotationTransposeCmd()
         val compressedVideoWidth = resolution.toCompressedWidth(orientation)
@@ -105,13 +104,35 @@ class CompressVideoRepo(
         MyLogs.LOG(
             "CompressVideoRepo",
             "generateCommand",
-            "resolution:$resolution ---> final resolution:$compressedVideoWidth x $compressedVideoHeight currentMaxBitrate: $currentMaxBitrate currentCrf: $currentCrf"
+            "resolution:$resolution ---> final resolution:$compressedVideoWidth x $compressedVideoHeight videoBitrate: ${videoBitrate}M"
         )
 
+        val filterComplex =
+            "[0:v]scale=w='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),${compressedVideoWidth},-2)':h='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),-2,${compressedVideoHeight})',setsar=1,setdar=a,pad=w=${compressedVideoWidth}:h=${compressedVideoHeight}:x=-1:y=-1,${rotationTransposeCmd}[vout]"
+        val common = arrayOf(
+            "-y",
+            "-i", inputPath,
+            "-f", "lavfi",
+            "-i", "anullsrc",
+            "-filter_complex", filterComplex,
+            "-map", "[vout]",
+            "-map", "0:a?",
+            "-map", "1:a",
+            "-b:v", "${videoBitrate}M",
+            "-maxrate", "${videoBitrate}M",
+            "-bufsize", "${videoBitrate * 2}M",
+            "-r", "30000/1001",
+            "-c:v", "h264_mediacodec",
+            "-c:a", "aac",
+            "-ar", "48000",
+            "-b:a", "256k",
+            "-movflags", "faststart",
+            "-pix_fmt", "yuv420p",
+        )
         return if (duration != null) {
-            "-y -i '$inputPath' -f lavfi -i anullsrc -filter_complex \"[0:v]scale=w='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),${compressedVideoWidth},-2)':h='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),-2,${compressedVideoHeight})',setsar=1,setdar=a,pad=w=${compressedVideoWidth}:h=${compressedVideoHeight}:x=-1:y=-1,${rotationTransposeCmd}[vout]\" -map \"[vout]\" -map \"0:a?\" -map \"1:a\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast -t $duration $outputPath"
+            common + arrayOf("-t", "$duration", outputPath)
         } else {
-            "-y -i '$inputPath' -f lavfi -i anullsrc -filter_complex \"[0:v]scale=w='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),${compressedVideoWidth},-2)':h='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),-2,${compressedVideoHeight})',setsar=1,setdar=a,pad=w=${compressedVideoWidth}:h=${compressedVideoHeight}:x=-1:y=-1,${rotationTransposeCmd}[vout]\" -map \"[vout]\" -map \"0:a?\" -map \"1:a\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast -shortest $outputPath"
+            common + arrayOf("-shortest", outputPath)
         }
     }
 
@@ -123,9 +144,8 @@ class CompressVideoRepo(
         userRotationDegrees: Int,
         targetDuration: Float,
         splittingMeta: VideoSplittingMeta
-    ): String {
-        val currentMaxBitrate = if (resolution.isBetterThanHD()) FHD_MAX_RATE else HD_MAX_RATE
-        val currentCrf = if (resolution.isBetterThanHD()) FHD_CRF else HD_CRF
+    ): Array<String> {
+        val videoBitrate = if (resolution.isBetterThanHD()) FHD_VIDEO_BITRATE else HD_VIDEO_BITRATE
 
         val rotationTransposeCmd = userRotationDegrees.toRotationTransposeCmd()
         val compressedVideoWidth = resolution.toCompressedWidth(orientation)
@@ -134,7 +154,7 @@ class CompressVideoRepo(
         MyLogs.LOG(
             "CompressVideoRepo",
             "generateCommandWithSplitting",
-            "resolution:$resolution ---> resolution:$compressedVideoWidth x $compressedVideoHeight targetDuration:$targetDuration splittingMeta:$splittingMeta currentMaxBitrate: $currentMaxBitrate currentCrf: $currentCrf"
+            "resolution:$resolution ---> resolution:$compressedVideoWidth x $compressedVideoHeight targetDuration:$targetDuration splittingMeta:$splittingMeta videoBitrate: ${videoBitrate}M"
         )
 
         var videoTrimCommand = ""
@@ -178,16 +198,36 @@ class CompressVideoRepo(
             count++
         }
 
-        return "-y -i '$inputPath' -f lavfi -i anullsrc -filter_complex \"${videoTrimCommand}${videoOutputList}concat=n=${sectionsAmount}:v=1:a=0,scale=w='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),${compressedVideoWidth},-2)':h='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),-2,${compressedVideoHeight})',setsar=1,setdar=a,pad=w=${compressedVideoWidth}:h=${compressedVideoHeight}:x=-1:y=-1,${rotationTransposeCmd}[ov]\" -filter_complex \"${audioTrimCommand}${audioOutputList}concat=n=${sectionsAmount}:v=0:a=1[oa]\" -map \"[ov]\" -map \"[oa]\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast $outputPath"
-//        return "-y -i '$inputPath' -f lavfi -i anullsrc -filter_complex \"${videoTrimCommand}${videoOutputList}concat=n=${listOfTimestamps.size}:v=1:a=0,scale=w='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),${widthHeight[0]},-2)':h='if(gte(iw/ih,${widthHeight[0]}/${widthHeight[1]}),-2,${widthHeight[1]})',setsar=1,setdar=a,pad=w=${widthHeight[0]}:h=${widthHeight[1]}:x=-1:y=-1[ov]\" -filter_complex \"${audioTrimCommand}${audioOutputList}concat=n=${listOfTimestamps.size}:v=0:a=1[oa]\" -map \"[ov]\" -map \"[oa]\" -crf $currentCrf -maxrate ${currentMaxBitrate}M -bufsize ${currentMaxBitrate * 2}M -r 30000/1001 -c:v libx264 -c:a aac -ar 48000 -b:a 256k -movflags faststart -pix_fmt yuv420p -preset superfast $outputPath"
+        val videoFilterComplex =
+            "${videoTrimCommand}${videoOutputList}concat=n=${sectionsAmount}:v=1:a=0,scale=w='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),${compressedVideoWidth},-2)':h='if(gte(iw/ih,${compressedVideoWidth}/${compressedVideoHeight}),-2,${compressedVideoHeight})',setsar=1,setdar=a,pad=w=${compressedVideoWidth}:h=${compressedVideoHeight}:x=-1:y=-1,${rotationTransposeCmd}[ov]"
+        val audioFilterComplex =
+            "${audioTrimCommand}${audioOutputList}concat=n=${sectionsAmount}:v=0:a=1[oa]"
+        return arrayOf(
+            "-y",
+            "-i", inputPath,
+            "-f", "lavfi",
+            "-i", "anullsrc",
+            "-filter_complex", "${videoFilterComplex};${audioFilterComplex}",
+            "-map", "[ov]",
+            "-map", "[oa]",
+            "-b:v", "${videoBitrate}M",
+            "-maxrate", "${videoBitrate}M",
+            "-bufsize", "${videoBitrate * 2}M",
+            "-r", "30000/1001",
+            "-c:v", "h264_mediacodec",
+            "-c:a", "aac",
+            "-ar", "48000",
+            "-b:a", "256k",
+            "-movflags", "faststart",
+            "-pix_fmt", "yuv420p",
+            outputPath
+        )
     }
 
     companion object {
         const val COMPRESSED_DIR_NAME = "compressed"
-        private const val FHD_MAX_RATE = 9
-        private const val HD_MAX_RATE = 6
-        private const val FHD_CRF = 22
-        private const val HD_CRF = 24
+        private const val FHD_VIDEO_BITRATE = 9
+        private const val HD_VIDEO_BITRATE = 6
         const val SECTION_DURATION = 5f
     }
 }
